@@ -57,7 +57,9 @@
   }
 
   /* ---------------- progress tracking ------------------------------------ */
-  var PROGRESS_KEY = 'dspf-progress-v1';
+  /* Manual only: a chapter counts as complete when the reader ticks its box. */
+  var PROGRESS_KEY = 'dspf-progress-v2';
+  var SUPP_IDS = { 'topic-11-shortest-paths': 1 };   /* not counted in the 10 */
 
   function getProgress() {
     try { return JSON.parse(localStorage.getItem(PROGRESS_KEY) || '{}'); }
@@ -67,25 +69,64 @@
     try { localStorage.setItem(PROGRESS_KEY, JSON.stringify(obj)); } catch (e) {}
   }
 
-  function initProgress() {
-    var pageId = document.body.getAttribute('data-page');
-    if (pageId && pageId.indexOf('topic-') === 0) {
-      var p = getProgress();
-      if (!p[pageId]) { p[pageId] = Date.now(); setProgress(p); }
-    }
+  function refreshIndicators() {
     var p = getProgress();
+
+    /* home page cards */
     document.querySelectorAll('[data-topic-id]').forEach(function (el) {
-      if (p[el.getAttribute('data-topic-id')]) el.classList.add('read');
+      el.classList.toggle('read', !!p[el.getAttribute('data-topic-id')]);
     });
+
+    /* sidebar links */
     document.querySelectorAll('.sidebar a[data-topic-id]').forEach(function (el) {
-      if (p[el.getAttribute('data-topic-id')]) el.classList.add('done');
+      el.classList.toggle('done', !!p[el.getAttribute('data-topic-id')]);
     });
+
+    /* the tick box on this page, if present */
+    var box = document.querySelector('[data-complete]');
+    if (box) {
+      var id = box.getAttribute('data-complete');
+      box.checked = !!p[id];
+      var label = box.closest('.chapter-check');
+      if (label) {
+        label.classList.toggle('is-done', box.checked);
+        var txt = label.querySelector('.cc-text');
+        if (txt) txt.textContent = box.checked ? 'Chapter complete' : 'Mark this chapter complete';
+      }
+    }
+
+    /* dashboard counter */
     var counter = document.getElementById('progress-count');
     if (counter) {
       var total = parseInt(counter.getAttribute('data-total'), 10) || 10;
-      var done = Object.keys(p).filter(function (k) { return k.indexOf('topic-') === 0; }).length;
-      counter.textContent = done + ' of ' + total + ' chapters read';
+      var done = Object.keys(p).filter(function (k) {
+        return k.indexOf('topic-') === 0 && !SUPP_IDS[k];
+      }).length;
+      counter.textContent = done + ' of ' + total + ' chapters complete';
     }
+  }
+
+  function initProgress() {
+    var box = document.querySelector('[data-complete]');
+    if (box) {
+      box.addEventListener('change', function () {
+        var id = box.getAttribute('data-complete');
+        var p = getProgress();
+        if (box.checked) { p[id] = Date.now(); } else { delete p[id]; }
+        setProgress(p);
+        refreshIndicators();
+      });
+    }
+
+    var reset = document.getElementById('reset-progress');
+    if (reset) {
+      reset.addEventListener('click', function () {
+        setProgress({});
+        refreshIndicators();
+      });
+    }
+
+    refreshIndicators();
   }
 
   /* ---------------- copy buttons ----------------------------------------- */
