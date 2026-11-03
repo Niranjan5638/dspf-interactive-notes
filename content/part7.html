@@ -1,0 +1,243 @@
+<!--TOPIC:06-heaps|Heaps and Heapsort|-->
+<h2 id="why">Giving up order to keep one fact</h2>
+
+<p>An AVL tree maintains a total order, and pays for it with a rotation on almost every insert. A <strong>heap</strong> maintains almost nothing: only that the maximum sits at the root. That is all a priority queue needs, and giving up everything else makes the structure dramatically simpler — no pointers, no rotations, just an array.</p>
+
+<div class="box why">
+<span class="box-label">The priority queue problem</span>
+<p>A server runs jobs, each with an expected run time. The policy is shortest remaining processing time. You need: find the next job to run, delete a job when it finishes, and insert a job when it arrives. A sorted array gives \(O(1)\) find and \(O(n)\) insert; an unsorted array gives \(O(n)\) find and \(O(1)\) insert. A heap gives \(O(1)\) find and \(O(\log n)\) for both — the best of both, which is exactly the trade a heap is designed for.</p>
+</div>
+
+<h2 id="property">The heap property and the array layout</h2>
+
+<div class="box def">
+<span class="box-label">Definition — max-heap</span>
+<p>A <strong>complete</strong> binary tree in which every node's key is greater than or equal to the keys of its children. Completeness means every level is full except possibly the last, which fills from the left — and that is precisely what allows the tree to be stored in an array with no gaps.</p>
+</div>
+
+<div class="formula" style="font-family:var(--font-mono);background:var(--paper-2);border:1px solid var(--rule-2);border-radius:9px;padding:14px 18px;margin:18px 0;white-space:pre;overflow-x:auto;font-size:13px;line-height:1.8">For a node at index i (0-based):
+    left child  = 2i + 1
+    right child = 2i + 2
+    parent      = floor((i - 1) / 2)</div>
+
+<div class="box example">
+<span class="box-label">Worked example — reading a heap as an array</span>
+<p>Array [10, 5, 3, 4, 1] represents:</p>
+<div class="codeblock">
+  <div class="codeblock-header"><span class="lang">Tree</span><span class="file">5 nodes, height 2</span></div>
+<pre><code class="language-c">            10 (index 0)
+           /            \
+       5 (1)            3 (2)
+      /     \
+   4 (3)    1 (4)</code></pre>
+</div>
+<p>Check the property: 10 ≥ 5 and 10 ≥ 3; 5 ≥ 4 and 5 ≥ 1. Valid max-heap. Node 3 at index 2 has children at indices 5 and 6, both beyond the array — it is a leaf.</p>
+</div>
+
+<h2 id="operations">Operations</h2>
+
+<div class="tablewrap"><table>
+<thead><tr><th>Operation</th><th>How</th><th>Cost</th></tr></thead>
+<tbody>
+<tr><td><code>top()</code></td><td>Return <code>a[0]</code></td><td>\(O(1)\)</td></tr>
+<tr><td><code>push(x)</code></td><td>Append at the end, then <strong>sift up</strong> while larger than the parent</td><td>\(O(\log n)\)</td></tr>
+<tr><td><code>pop()</code></td><td>Move the last element to the root, shrink, then <strong>sift down</strong></td><td>\(O(\log n)\)</td></tr>
+<tr><td><code>build-heap</code></td><td>Sift down from the last internal node back to the root</td><td>\(O(n)\) — not \(O(n \log n)\)</td></tr>
+<tr><td><code>heapsort</code></td><td>build-heap, then repeatedly swap root with last and sift down</td><td>\(O(n \log n)\)</td></tr>
+</tbody></table></div>
+
+<h2 id="trace">Worked trace — build-heap</h2>
+
+<div class="box example">
+<span class="box-label">Building a max-heap from [4, 10, 3, 5, 1]</span>
+<p>The last internal node is at index \(\lfloor 5/2 \rfloor - 1 = 1\). Sift down from there back to index 0.</p>
+<div class="tablewrap"><table>
+<thead><tr><th>Step</th><th>Action</th><th>Array</th></tr></thead>
+<tbody>
+<tr><td>start</td><td>—</td><td>[4, 10, 3, 5, 1]</td></tr>
+<tr><td>i = 1 (value 10)</td><td>children 5 and 1; 10 is largest, no swap</td><td>[4, 10, 3, 5, 1]</td></tr>
+<tr><td>i = 0 (value 4)</td><td>children 10 and 3; swap with 10</td><td>[10, 4, 3, 5, 1]</td></tr>
+<tr><td>sift continues at index 1 (value 4)</td><td>children 5 and 1; swap with 5</td><td>[10, 5, 3, 4, 1]</td></tr>
+</tbody></table></div>
+<p>Result [10, 5, 3, 4, 1]. Check: 10 ≥ 5, 3 and 5 ≥ 4, 1. Valid.</p>
+</div>
+
+<div class="box why">
+<span class="box-label">Why build-heap is O(n) and not O(n log n)</span>
+<p>Sifting down from a node of height \(k\) costs \(O(k)\). A complete tree has at most \(\lceil n/2^{k+1}\rceil\) nodes of height \(k\). So the total is</p>
+\[
+\sum_k k \cdot \frac{n}{2^{k+1}} = \frac{n}{2}\sum_k \frac{k}{2^k} = \frac{n}{2}\cdot 2 = O(n)
+\]
+<p>because \(\sum k/2^k\) converges to 2. Most nodes are near the bottom where subtrees are tiny, and that is what makes the sum linear.</p>
+</div>
+
+<h2 id="insertdelete">Insert and delete-max traces</h2>
+
+<div class="box example">
+<span class="box-label">Inserting 15 into [10, 5, 3, 4, 1]</span>
+<div class="tablewrap"><table>
+<thead><tr><th>Step</th><th>Action</th><th>Array</th></tr></thead>
+<tbody>
+<tr><td>append</td><td>place at index 5</td><td>[10, 5, 3, 4, 1, 15]</td></tr>
+<tr><td>sift up</td><td>parent of 5 is index 2 (value 3); 15 &gt; 3, swap</td><td>[10, 5, 15, 4, 1, 3]</td></tr>
+<tr><td>sift up</td><td>parent of 2 is index 0 (value 10); 15 &gt; 10, swap</td><td>[15, 5, 10, 4, 1, 3]</td></tr>
+</tbody></table></div>
+<p>Two comparisons, so \(O(\log n)\).</p>
+</div>
+
+<div class="box example">
+<span class="box-label">Deleting the maximum from [15, 5, 10, 4, 1, 3]</span>
+<div class="tablewrap"><table>
+<thead><tr><th>Step</th><th>Action</th><th>Array</th></tr></thead>
+<tbody>
+<tr><td>remove root</td><td>save 15; move the last element (3) to index 0; shrink</td><td>[3, 5, 10, 4, 1]</td></tr>
+<tr><td>sift down</td><td>children 5 and 10; swap with 10</td><td>[10, 5, 3, 4, 1]</td></tr>
+<tr><td>sift down</td><td>index 2 has no children; stop</td><td>[10, 5, 3, 4, 1]</td></tr>
+</tbody></table></div>
+</div>
+
+<div class="viz" id="viz-heap">
+  <div class="viz-head">
+    <h3>Heap</h3>
+    <div class="viz-controls">
+      <input type="number" data-heap="value" placeholder="value" aria-label="Value" style="width:74px">
+      <button data-heap="insert">Insert</button>
+      <button data-heap="extract">Extract max</button>
+      <button data-heap="build">Build [4,10,3,5,1]</button>
+      <button data-heap="clear">Clear</button>
+    </div>
+  </div>
+  <div class="viz-stage"></div>
+  <div class="viz-log"></div>
+</div>
+
+<h2 id="heapsort">Heapsort</h2>
+
+<p>Build a max-heap, then repeat \(n-1\) times: swap the root with the last element, shrink the heap by one, and sift the new root down. The largest element lands in its final position on each pass, and the sorted region grows from the right.</p>
+
+<div class="codeblock">
+  <div class="codeblock-header"><span class="lang">C</span><span class="file">heap.c</span><button class="copy-btn">Copy</button></div>
+<pre><code class="language-c">#include &lt;stdio.h&gt;
+
+static void swap(int *a, int *b) { int t = *a; *a = *b; *b = t; }
+
+/* restore the heap property in the subtree rooted at i, heap size n */
+static void sift_down(int a[], int n, int i) {
+    while (1) {
+        int l = 2 * i + 1, r = 2 * i + 2, big = i;
+        if (l &lt; n &amp;&amp; a[l] &gt; a[big]) big = l;
+        if (r &lt; n &amp;&amp; a[r] &gt; a[big]) big = r;
+        if (big == i) break;
+        swap(&amp;a[i], &amp;a[big]);
+        i = big;
+    }
+}
+
+/* O(n) */
+void build_heap(int a[], int n) {
+    for (int i = n / 2 - 1; i &gt;= 0; i--)
+        sift_down(a, n, i);
+}
+
+/* O(n log n) time, O(1) extra space */
+void heapsort(int a[], int n) {
+    build_heap(a, n);
+    for (int end = n - 1; end &gt; 0; end--) {
+        swap(&amp;a[0], &amp;a[end]);   /* max goes to its final place */
+        sift_down(a, end, 0);    /* restore over the shrunk heap */
+    }
+}
+
+int main(void) {
+    int a[] = {4, 10, 3, 5, 1};
+    int n = 5;
+    heapsort(a, n);
+    for (int i = 0; i &lt; n; i++) printf("%d ", a[i]);   /* 1 3 4 5 10 */
+    printf("\n");
+    return 0;
+}</code></pre>
+</div>
+
+<div class="codeblock">
+  <div class="codeblock-header"><span class="lang">Python</span><span class="file">heap.py</span><button class="copy-btn">Copy</button></div>
+<pre><code class="language-python">def sift_down(a, n, i):
+    while True:
+        left, right, big = 2 * i + 1, 2 * i + 2, i
+        if left < n and a[left] > a[big]:
+            big = left
+        if right < n and a[right] > a[big]:
+            big = right
+        if big == i:
+            return
+        a[i], a[big] = a[big], a[i]
+        i = big
+
+
+def build_heap(a):
+    """O(n) - bottom-up."""
+    for i in range(len(a) // 2 - 1, -1, -1):
+        sift_down(a, len(a), i)
+
+
+def heapsort(a):
+    """O(n log n) time, O(1) extra space."""
+    n = len(a)
+    build_heap(a)
+    for end in range(n - 1, 0, -1):
+        a[0], a[end] = a[end], a[0]
+        sift_down(a, end, 0)
+
+
+# For a priority queue, use the standard library:
+import heapq
+
+h = []
+heapq.heappush(h, 5)      # O(log n)
+heapq.heappush(h, 1)
+heapq.heappush(h, 9)
+print(heapq.heappop(h))   # 1 - heapq is a MIN-heap, not max
+
+if __name__ == "__main__":
+    a = [4, 10, 3, 5, 1]
+    heapsort(a)
+    print(a)              # [1, 3, 4, 5, 10]</code></pre>
+</div>
+
+<div class="box warn">
+<span class="box-label">Python's heapq is a min-heap</span>
+<p><code>heapq</code> gives the smallest element first. For a max-heap, either negate the values on the way in and out, or store tuples <code>(-priority, item)</code>. This is a favourite exam question.</p>
+</div>
+
+<h2 id="mistakes">Common mistakes</h2>
+
+<ol>
+<li><strong>Using the wrong child formula.</strong> Zero-based: children are \(2i+1\) and \(2i+2\). One-based (as in some textbooks): \(2i\) and \(2i+1\). Check which the question uses.</li>
+<li><strong>Claiming build-heap is \(O(n\log n)\).</strong> It is \(O(n)\); the summation above is the proof.</li>
+<li><strong>Forgetting that a heap is not sorted.</strong> The array [10, 5, 3, 4, 1] is a valid heap but not sorted, and inorder traversal of a heap is meaningless.</li>
+<li><strong>Assuming heapsort is stable.</strong> It is not — the swap at the root destroys relative order of equal keys.</li>
+<li><strong>Sifting the wrong direction.</strong> Insert sifts <em>up</em>; delete-max and build-heap sift <em>down</em>.</li>
+</ol>
+
+<h2 id="check">Check your understanding</h2>
+
+<div class="quiz">
+  <div class="qtext">Is [9, 7, 8, 3, 5, 2] a valid max-heap?</div>
+  <div class="opts">
+    <button class="opt" data-correct>Yes — every parent is at least its children</button>
+    <button class="opt">No — 8 is greater than 7</button>
+    <button class="opt">No — the array is not sorted</button>
+    <button class="opt">Only if it is also complete</button>
+  </div>
+  <div class="fb">Check the parent-child pairs: 9 ≥ 7 and 9 ≥ 8; 7 ≥ 3 and 7 ≥ 5; 8 ≥ 2. All hold, so it is a valid max-heap. A heap need not be sorted — 7 and 8 are siblings, and there is no ordering requirement between siblings.</div>
+</div>
+
+<div class="quiz">
+  <div class="qtext">What is the time complexity of build-heap on n elements?</div>
+  <div class="opts">
+    <button class="opt">O(n log n) — n sift-downs of cost log n each</button>
+    <button class="opt" data-correct>O(n) — most nodes are near the bottom where sift-down is cheap</button>
+    <button class="opt">O(log n)</button>
+    <button class="opt">O(n²)</button>
+  </div>
+  <div class="fb">The naive count overestimates because it assumes every sift-down costs log n. In fact a node of height k costs only k, and there are very few tall nodes. Summing k·n/2^(k+1) over k gives 2n, so the bound is O(n).</div>
+</div>
