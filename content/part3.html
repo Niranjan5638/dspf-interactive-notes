@@ -1,0 +1,261 @@
+<!--TOPIC:02-stacks-queues|Stacks, Queues and Linked Lists|-->
+<h2 id="why">Two ways to decide who goes next</h2>
+
+<p>Every container answers one question: <em>when something asks for the next item, which item should it get?</em> A stack answers "the most recent one". A queue answers "the oldest one". That is the entire difference, and it turns out to be the difference between depth-first and breadth-first traversal later in the course.</p>
+
+<div class="box why">
+<span class="box-label">Why these two and not something else</span>
+<p>LIFO matches every situation where you must finish what you started before returning: function calls, undo history, bracket matching, backtracking. FIFO matches every situation where fairness or arrival order matters: printer queues, request buffering, and level-by-level exploration of a graph.</p>
+</div>
+
+<h2 id="adt">Abstract data type versus implementation</h2>
+
+<p>An <strong>abstract data type</strong> specifies <em>what</em> the operations do, not <em>how</em> they are done. This separation is the point of the chapter: the same stack ADT can be an array or a linked list, and the choice is a complexity decision, not a correctness one.</p>
+
+<div class="box def">
+<span class="box-label">Definition — stack ADT</span>
+<p>A collection supporting <code>push(x)</code> (add to the top), <code>pop()</code> (remove and return the top), <code>top()</code> (read the top without removing), <code>isEmpty()</code>, and <code>size()</code>. The defining property is that the item removed is always the one most recently added — <strong>last in, first out</strong>.</p>
+</div>
+
+<div class="box def">
+<span class="box-label">Definition — queue ADT</span>
+<p>A collection supporting <code>enqueue(x)</code> (add at the rear), <code>dequeue()</code> (remove and return the front), <code>front()</code>, <code>isEmpty()</code>, and <code>size()</code>. The defining property is that the item removed is always the one least recently added — <strong>first in, first out</strong>.</p>
+</div>
+
+<h2 id="implementations">Implementations and their costs</h2>
+
+<div class="tablewrap"><table>
+<thead><tr><th></th><th>Stack</th><th>Queue</th></tr></thead>
+<tbody>
+<tr><td>Array implementation</td><td>\(O(1)\) push and pop at the end</td><td>Naive array gives \(O(n)\) dequeue; use a circular buffer for \(O(1)\)</td></tr>
+<tr><td>Linked implementation</td><td>\(O(1)\) push and pop at the head</td><td>\(O(1)\) enqueue at tail, dequeue at head</td></tr>
+<tr><td>Classic uses</td><td>Function calls, expression evaluation, undo, backtracking</td><td>Scheduling, buffering, level-order traversal</td></tr>
+</tbody></table></div>
+
+<h3>Why the circular queue exists</h3>
+
+<p>In a naive array queue you enqueue at the back and dequeue from the front. The front index marches forward while the back stays put, so the queue walks off the end of the array even though most of it is empty. Shifting every element left after each dequeue costs \(O(n)\) and defeats the purpose.</p>
+
+<p>The fix is to make the indices wrap: <code>rear = (rear + 1) % capacity</code>. Now the array is treated as a ring, and both operations are \(O(1)\). The cost is that you must track the size explicitly to distinguish "full" from "empty" — both states have <code>front == rear</code>.</p>
+
+<div class="viz" id="viz-stack">
+  <div class="viz-head">
+    <h3>Stack and queue</h3>
+    <div class="viz-controls">
+      <input type="number" data-viz="value" placeholder="value" aria-label="Value" style="width:74px">
+      <button data-act="push">push</button>
+      <button data-act="pop">pop</button>
+      <button data-act="enqueue">enqueue</button>
+      <button data-act="dequeue">dequeue</button>
+      <button data-act="switch">Switch to queue</button>
+    </div>
+  </div>
+  <div class="viz-stage"></div>
+  <div class="viz-log"></div>
+</div>
+
+<h2 id="linked">Linked lists</h2>
+
+<p>An array stores elements contiguously, so access by index is \(O(1)\) but insertion in the middle is \(O(n)\) because everything after it must shift. A linked list stores each element in its own node together with a pointer to the next, so insertion is \(O(1)\) once you hold the position — but reaching that position costs \(O(n)\).</p>
+
+<div class="tablewrap"><table>
+<thead><tr><th>Variant</th><th>Structure</th><th>What it buys</th></tr></thead>
+<tbody>
+<tr><td>Singly linked</td><td>Each node points to the next</td><td>\(O(1)\) insert and delete at the head; \(O(n)\) search</td></tr>
+<tr><td>Circular</td><td>Last node points back to the first</td><td>Cycle forever without a null check; natural for round-robin</td></tr>
+<tr><td>Doubly linked</td><td>Each node points both ways</td><td>Delete a given node in \(O(1)\) without scanning for its predecessor</td></tr>
+<tr><td>Deque</td><td>Double-ended queue</td><td>Insert and delete at both ends in \(O(1)\)</td></tr>
+</tbody></table></div>
+
+<div class="box warn">
+<span class="box-label">Array or linked list?</span>
+<p>Answer by naming the operation, not the structure. "\(O(1)\) random access" favours the array. "\(O(1)\) insert in the middle" favours the list. But remember the hidden costs: an array is cache-friendly and a linked list is not, so on real hardware the array often wins even where the asymptotics favour the list.</p>
+</div>
+
+<h2 id="code">C implementation</h2>
+
+<p>A stack on an array with the doubling strategy from chapter 1, and a queue as a circular buffer.</p>
+
+<div class="codeblock">
+  <div class="codeblock-header"><span class="lang">C</span><span class="file">stack.c</span><button class="copy-btn">Copy</button></div>
+<pre><code class="language-c">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+
+typedef struct {
+    int *data;
+    int size;       /* number of elements stored */
+    int capacity;   /* allocated slots           */
+} Stack;
+
+Stack *stack_new(void) {
+    Stack *s = malloc(sizeof *s);
+    if (!s) return NULL;
+    s-&gt;capacity = 2;
+    s-&gt;size = 0;
+    s-&gt;data = malloc(s-&gt;capacity * sizeof(int));
+    if (!s-&gt;data) { free(s); return NULL; }
+    return s;
+}
+
+/* O(1) amortised: doubles only when full */
+void push(Stack *s, int v) {
+    if (s-&gt;size == s-&gt;capacity) {
+        int *bigger = realloc(s-&gt;data, s-&gt;capacity * 2 * sizeof(int));
+        if (!bigger) return;              /* allocation failed */
+        s-&gt;data = bigger;
+        s-&gt;capacity *= 2;
+    }
+    s-&gt;data[s-&gt;size++] = v;
+}
+
+/* O(1) */
+int pop(Stack *s, int *out) {
+    if (s-&gt;size == 0) return 0;           /* underflow */
+    *out = s-&gt;data[--s-&gt;size];
+    return 1;
+}
+
+void stack_free(Stack *s) {
+    free(s-&gt;data);   /* free the buffer ... */
+    free(s);         /* ... then the struct  */
+}
+
+int main(void) {
+    Stack *s = stack_new();
+    for (int i = 1; i &lt;= 3; i++) push(s, i * 10);
+    int v;
+    while (pop(s, &amp;v)) printf("%d ", v);   /* prints 30 20 10 */
+    printf("\n");
+    stack_free(s);
+    return 0;
+}</code></pre>
+</div>
+
+<div class="codeblock">
+  <div class="codeblock-header"><span class="lang">C</span><span class="file">queue.c</span><button class="copy-btn">Copy</button></div>
+<pre><code class="language-c">#include &lt;stdio.h&gt;
+#define CAP 8
+
+typedef struct {
+    int data[CAP];
+    int front;   /* index of the oldest element */
+    int rear;    /* index where the next one goes */
+    int count;   /* needed to tell full from empty */
+} Queue;
+
+void q_init(Queue *q) { q-&gt;front = q-&gt;rear = q-&gt;count = 0; }
+
+int q_enqueue(Queue *q, int v) {
+    if (q-&gt;count == CAP) return 0;        /* full */
+    q-&gt;data[q-&gt;rear] = v;
+    q-&gt;rear = (q-&gt;rear + 1) % CAP;        /* wrap around */
+    q-&gt;count++;
+    return 1;
+}
+
+int q_dequeue(Queue *q, int *out) {
+    if (q-&gt;count == 0) return 0;          /* empty */
+    *out = q-&gt;data[q-&gt;front];
+    q-&gt;front = (q-&gt;front + 1) % CAP;      /* wrap around */
+    q-&gt;count--;
+    return 1;
+}
+
+int main(void) {
+    Queue q; q_init(&amp;q);
+    for (int i = 1; i &lt;= 3; i++) q_enqueue(&amp;q, i * 10);
+    int v;
+    while (q_dequeue(&amp;q, &amp;v)) printf("%d ", v);   /* prints 10 20 30 */
+    printf("\n");
+    return 0;
+}</code></pre>
+</div>
+
+<h2 id="python">Python implementation</h2>
+
+<p>Python lists already behave as stacks: <code>append</code> and <code>pop</code> are both \(O(1)\) amortised at the right-hand end, using exactly the doubling strategy above. For a queue, a list is the wrong tool — <code>list.pop(0)</code> is \(O(n)\) because every remaining element shifts. Use <code>collections.deque</code>, which is a doubly linked block structure with \(O(1)\) at both ends.</p>
+
+<div class="codeblock">
+  <div class="codeblock-header"><span class="lang">Python</span><span class="file">containers.py</span><button class="copy-btn">Copy</button></div>
+<pre><code class="language-python">from collections import deque
+
+# A stack: list is already a stack at the right-hand end.
+stack = []
+stack.append(10)      # push  -> O(1) amortised
+stack.append(20)
+stack.append(30)
+print(stack.pop())    # 30, LIFO -> O(1)
+
+# A queue: deque, never list.pop(0) which is O(n).
+q = deque()
+q.append(10)          # enqueue -> O(1)
+q.append(20)
+q.append(30)
+print(q.popleft())    # 10, FIFO -> O(1)
+
+# A linked list, built by hand to show the pointers explicitly.
+class Node:
+    __slots__ = ("value", "next")
+    def __init__(self, value, next=None):
+        self.value = value
+        self.next = next
+
+
+def reverse(head):
+    """Reverse a singly linked list in place. O(n) time, O(1) space."""
+    prev = None
+    cur = head
+    while cur:
+        nxt = cur.next      # 1. remember the rest
+        cur.next = prev     # 2. flip this pointer
+        prev = cur          # 3. advance prev
+        cur = nxt           # 4. advance cur
+    return prev             # prev is the new head
+
+
+head = Node(1, Node(2, Node(3)))
+head = reverse(head)
+while head:
+    print(head.value, end=" ")   # 3 2 1
+    head = head.next</code></pre>
+</div>
+
+<h3>Memory, the honest difference</h3>
+
+<p>In C you own the memory. <code>malloc</code> returns a block, <code>realloc</code> may move it, and <code>free</code> returns it. Forget to free and you leak; free twice and you corrupt the heap; keep a pointer after freeing and you have a dangling reference.</p>
+
+<p>In Python you own nothing. Objects are reference-counted and collected when unreachable. A list of integers stores <em>pointers</em> to <code>int</code> objects, not raw integers, so it uses far more memory than a C array of the same length — typically 8 bytes per pointer plus 28 bytes per small integer, against 4 bytes per <code>int</code> in C.</p>
+
+<h2 id="mistakes">Common mistakes</h2>
+
+<ol>
+<li><strong>Popping an empty stack.</strong> Always check. In C this reads garbage; in Python it raises <code>IndexError</code>.</li>
+<li><strong>Using <code>list.pop(0)</code> as a queue.</strong> It is \(O(n)\) and quietly turns a linear algorithm into a quadratic one.</li>
+<li><strong>Losing the head pointer</strong> while traversing a linked list, leaking the rest of the list.</li>
+<li><strong>Freeing the struct before the buffer.</strong> Free the inner allocation first.</li>
+<li><strong>Confusing full and empty in a circular queue</strong> without a size counter.</li>
+</ol>
+
+<h2 id="check">Check your understanding</h2>
+
+<div class="quiz">
+  <div class="qtext">A queue is implemented on an array of capacity 8 using <code>front</code> and <code>rear</code> indices that wrap modulo 8. After 5 enqueues and 5 dequeues, what are <code>front</code> and <code>rear</code>?</div>
+  <div class="opts">
+    <button class="opt">front = 0, rear = 0, and the queue is empty</button>
+    <button class="opt" data-correct>front = 5, rear = 5, and the queue is empty</button>
+    <button class="opt">front = 0, rear = 5</button>
+    <button class="opt">Cannot be determined without the values</button>
+  </div>
+  <div class="fb">Both indices advanced 5 times and wrap modulo 8, so both sit at 5. The queue is empty because <code>count</code> is zero — which is exactly why the counter is needed: <code>front == rear</code> alone cannot distinguish empty from full.</div>
+</div>
+
+<div class="quiz">
+  <div class="qtext">Which operation is <em>not</em> \(O(1)\) on a singly linked list when you hold a pointer to the node?</div>
+  <div class="opts">
+    <button class="opt">Inserting a node after the given node</button>
+    <button class="opt" data-correct>Deleting the given node</button>
+    <button class="opt">Reading the node's value</button>
+    <button class="opt">Inserting at the head</button>
+  </div>
+  <div class="fb">To delete a node from a singly linked list you must update its predecessor's <code>next</code> pointer, and finding the predecessor requires walking from the head — \(O(n)\). A doubly linked list fixes this in \(O(1)\), which is precisely why it exists.</div>
+</div>
