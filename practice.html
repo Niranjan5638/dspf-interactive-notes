@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Practice and Examination Questions · DSPF</title>
+<meta name="description" content="Graded questions with full worked solutions, from recall to exam-hard.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;0,6..72,700;1,6..72,400&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+<script>
+  window.MathJax = {
+    tex: { inlineMath: [['\\(', '\\)']], displayMath: [['\\[', '\\]']] },
+    options: { skipHtmlTags: ['script','noscript','style','textarea','pre','code'] }
+  };
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-c.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-python.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism.min.css">
+</head>
+<body data-page="practice">
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">DSPF<span>.</span>Notes</a>
+    <nav class="topnav">
+      <a href="index.html">Home</a>
+      <a href="topics/01-complexity.html">Chapters</a>
+      <a href="visualizers.html">Visualizers</a>
+      <a href="practice.html">Practice</a>
+      <a href="glossary.html">Glossary</a>
+    </nav>
+    <div class="searchbox">
+      <input id="search-input" type="search" placeholder="Search topics…  ( / )" autocomplete="off" aria-label="Search the textbook">
+      <div class="searchresults" id="search-results"></div>
+    </div>
+  </div>
+</header>
+<div class="shell">
+<nav class="sidebar" aria-label="Chapter navigation">
+<div class="side-group">Chapters</div>
+<a href="topics/01-complexity.html" data-topic-id="topic-01-complexity">01 · Measuring Cost: Complexity and Asymptotic Notation</a>
+<a href="topics/02-stacks-queues.html" data-topic-id="topic-02-stacks-queues">02 · Stacks, Queues and Linked Lists</a>
+<a href="topics/03-trees.html" data-topic-id="topic-03-trees">03 · Trees and Traversals</a>
+<a href="topics/04-bst.html" data-topic-id="topic-04-bst">04 · Binary Search Trees</a>
+<a href="topics/05-avl.html" data-topic-id="topic-05-avl">05 · AVL Trees and Rotations</a>
+<a href="topics/06-heaps.html" data-topic-id="topic-06-heaps">06 · Heaps and Heapsort</a>
+<a href="topics/07-graphs.html" data-topic-id="topic-07-graphs">07 · Graphs: Terminology and Representation</a>
+<a href="topics/08-bfs.html" data-topic-id="topic-08-bfs">08 · Breadth-First Search</a>
+<a href="topics/09-dfs.html" data-topic-id="topic-09-dfs">09 · Depth-First Search</a>
+<a href="topics/10-mst.html" data-topic-id="topic-10-mst">10 · Minimum Spanning Trees</a>
+<div class="side-group">Tools</div>
+<a href="visualizers.html">Interactive Visualizers</a>
+<a href="practice.html" class="active">Practice and Examination Questions</a>
+<a href="glossary.html">Glossary</a>
+</nav>
+<main>
+<div class="kicker">Tool</div>
+<h1>Practice and Examination Questions</h1>
+<p class="lede">Graded questions with full worked solutions, from recall to exam-hard.</p>
+<p>Questions are grouped by chapter and graded. Every one has a full worked solution behind the disclosure triangle — open it only after attempting the question on paper. The <span class="pill">recall</span> questions test whether you know the definitions; <span class="pill">applied</span> questions test whether you can execute; <span class="pill supp">exam-hard</span> questions test whether you can reason.</p>
+
+<h2 id="p1">Chapter 1 — Complexity</h2>
+
+<details>
+<summary><span class="pill">recall</span> State the formal definition of \(f(n) = O(g(n))\) and explain what \(n_0\) is for.</summary>
+<div class="details-body">
+<p>\(f(n) = O(g(n))\) if there exist positive constants \(c\) and \(n_0\) such that \(f(n) \le c\,g(n)\) for all \(n \ge n_0\).</p>
+<p>\(n_0\) is the threshold beyond which the bound holds. Asymptotic notation describes behaviour <em>eventually</em>, so a function may exceed the bound for small inputs and still be \(O(g)\). Without \(n_0\) the definition would fail for almost every real algorithm, because lower-order terms dominate at small \(n\).</p>
+</div>
+</details>
+
+<details>
+<summary><span class="pill">applied</span> Give the tight bound for: <code>for (i = n; i &gt; 0; i /= 3) for (j = 0; j &lt; n; j++) work();</code></summary>
+<div class="details-body">
+<p>The outer loop divides by 3 each time, so it runs \(\lceil \log_3 n \rceil\) times. The inner loop runs \(n\) times, independently. Total \(n \log_3 n\), which is \(\Theta(n \log n)\) since the base of the logarithm is a constant factor.</p>
+<p>Common wrong answer: \(O(n^2)\), from assuming the outer loop is \(O(n)\).</p>
+</div>
+</details>
+
+<details>
+<summary><span class="pill supp">exam-hard</span> Prove that \(n^2\) is <em>not</em> \(O(n)\).</summary>
+<div class="details-body">
+<p>Suppose it were. Then there exist \(c &gt; 0\) and \(n_0\) with \(n^2 \le c\,n\) for all \(n \ge n_0\). Divide both sides by \(n\) (positive for \(n \ge n_0 \ge 1\)): \(n \le c\) for all \(n \ge n_0\).</p>
+<p>But \(n\) grows without bound, so choose any \(n &gt; \max(c, n_0)\) and the inequality fails. Contradiction, so no such \(c\) exists. ∎</p>
+</div>
+</details>
+
+<h2 id="p2">Chapter 2 — Stacks, queues and linked lists</h2>
+
+<details>
+<summary><span class="pill">applied</span> A circular queue of capacity 6 has <code>front = 4</code>, <code>rear = 1</code>, <code>count = 3</code>. Which indices hold the three elements?</summary>
+<div class="details-body">
+<p>The elements occupy indices <code>front</code>, <code>front+1</code>, <code>front+2</code> modulo 6: 4, 5, 0. So indices 4, 5 and 0 hold the queue in FIFO order — index 4 is the oldest (front) and index 0 the newest.</p>
+<p>Check: after three dequeues from index 4, front becomes 1, which equals rear. With <code>count = 0</code> the queue is empty; without the counter you could not distinguish that from full.</p>
+</div>
+</details>
+
+<details>
+<summary><span class="pill supp">exam-hard</span> Explain why an array-based stack doubles rather than growing by a constant, using an amortised argument.</summary>
+<div class="details-body">
+<p><strong>Doubling:</strong> copies occur at sizes 1, 2, 4, …, n. Total copy work is \(\sum 2^k &lt; 2n\). Over \(n\) pushes the total is at most \(3n\), so amortised \(O(1)\) per push.</p>
+<p><strong>Constant growth by k:</strong> a copy of the current size happens every \(k\) pushes. Total work is roughly \(\sum_{i=1}^{n/k} i k \approx n^2/2k\), so amortised \(O(n)\) per push.</p>
+<p>The exponential policy makes the copy cost grow geometrically while the number of copies shrinks geometrically, and the two cancel. Constant growth makes the copy cost grow linearly while the frequency stays fixed, and they do not cancel.</p>
+</div>
+</details>
+
+<h2 id="p3">Chapter 3 — Trees</h2>
+
+<details>
+<summary><span class="pill">applied</span> A binary tree has preorder <code>4 2 1 3 6 5 7</code> and inorder <code>1 2 3 4 5 6 7</code>. Reconstruct the tree.</summary>
+<div class="details-body">
+<p>The first element of preorder is the root: 4. In the inorder sequence, 4 splits the rest into left <code>1 2 3</code> and right <code>5 6 7</code>.</p>
+<p>In preorder the next three elements <code>2 1 3</code> belong to the left subtree; their first is 2, which splits <code>1 2 3</code> into <code>1</code> and <code>3</code>. So 2 has children 1 and 3.</p>
+<p>Similarly <code>6 5 7</code> gives root 6 with children 5 and 7. The tree is: root 4, left 2 (1, 3), right 6 (5, 7).</p>
+</div>
+</details>
+
+<details>
+<summary><span class="pill supp">exam-hard</span> Prove that a full binary tree with L leaves has exactly 2L − 1 nodes.</summary>
+<div class="details-body">
+<p>Let \(n\) be the total nodes, \(i\) the internal nodes and \(L\) the leaves, so \(n = i + L\).</p>
+<p>Count edges from below: every node except the root has exactly one parent, so there are \(n - 1\) edges. Count from above: every internal node has exactly 2 children in a full binary tree, so there are \(2i\) edges. Therefore \(n - 1 = 2i\).</p>
+<p>Substituting \(i = n - L\): \(n - 1 = 2(n - L)\), so \(n - 1 = 2n - 2L\), giving \(n = 2L - 1\). ∎</p>
+</div>
+</details>
+
+<h2 id="p4">Chapter 4 — Binary search trees</h2>
+
+<details>
+<summary><span class="pill">applied</span> Insert 50, 30, 70, 20, 40, 60, 80, then delete 50. Show the tree after each step of the deletion.</summary>
+<div class="details-body">
+<p>Before deletion the tree is balanced: 50 at the root, 30 and 70 as children, 20 and 40 under 30, 60 and 80 under 70.</p>
+<p>50 has two children, so this is case 3. Its inorder successor is the minimum of the right subtree: 60. Copy 60 into the root, then delete 60 from the right subtree — where it is a leaf, so case 1.</p>
+<p>Result: root 60, left 30 (children 20, 40), right 70 (no left child, right child 80). Inorder still reads 20 30 40 60 70 80.</p>
+</div>
+</details>
+
+<details>
+<summary><span class="pill supp">exam-hard</span> What is the average-case height of a BST built from a random permutation of n distinct keys, and why is the worst case different?</summary>
+<div class="details-body">
+<p>Average case: \(\Theta(\log n)\). With random insertion order the tree behaves like a random binary search tree, whose expected height is about \(4.311 \ln n\) — logarithmic.</p>
+<p>Worst case: \(n - 1\), achieved by inserting in sorted order, which produces a chain. Both cases have the same set of keys; only the insertion order differs, so the structure's guarantee is a statement about the input distribution, not about the algorithm.</p>
+<p>This is exactly why AVL trees add an invariant: they convert the average-case guarantee into a worst-case one.</p>
+</div>
+</details>
+
+<h2 id="p5">Chapter 5 — AVL trees</h2>
+
+<details>
+<summary><span class="pill">applied</span> Insert 3, 2, 1, 4, 5, 6, 7 into an empty AVL tree, showing every rotation.</summary>
+<div class="details-body">
+<p>Insert 3, then 2 (left), then 1 (left of 2) → node 3 has bf +2, LL case → right rotation → root 2 with children 1 and 3.</p>
+<p>Insert 4 → right child of 3, balanced. Insert 5 → right of 4; node 3 now has bf −2, RR case → left rotation about 3 → subtree becomes 4 with children 3 and 5.</p>
+<p>Insert 6 → right of 5; node 4 has bf −2 → left rotation about 4 → 5 becomes subtree root.</p>
+<p>Insert 7 → node 5 unbalanced, RR → left rotation → root 4, right 6 with children 5 and 7. Final height 2 for 7 nodes.</p>
+</div>
+</details>
+
+<details>
+<summary><span class="pill supp">exam-hard</span> Prove that an AVL tree of height h has at least n(h) = n(h−1) + n(h−2) + 1 internal nodes, and hence height O(log n).</summary>
+<div class="details-body">
+<p>Take a minimal AVL tree of height \(h\). Its root has two subtrees, one of height \(h-1\) (else the tree would be shorter) and one of height at least \(h-2\) (else the balance factor would exceed 1). Each is itself a minimal AVL tree of its height, so</p>
+<p>\(n(h) = n(h-1) + n(h-2) + 1\), with \(n(1) = 1\) and \(n(2) = 2\).</p>
+<p>This is the Fibonacci recurrence shifted: \(n(h) = F_{h+2} - 1\). Fibonacci numbers grow as \(\phi^h/\sqrt5\) with \(\phi \approx 1.618\), so \(n(h) = \Omega(\phi^h)\). Inverting, \(h = O(\log_\phi n) = O(\log n)\). ∎</p>
+</div>
+</details>
+
+<h2 id="p6">Chapter 6 — Heaps</h2>
+
+<details>
+<summary><span class="pill">applied</span> Is [20, 15, 18, 8, 12, 10, 5] a max-heap? If not, fix it with the minimum number of swaps.</summary>
+<div class="details-body">
+<p>Check each parent: 20 ≥ 15, 18 ✓; 15 ≥ 8, 12 ✓; 18 ≥ 10, 5 ✓. Every parent dominates its children, so it <em>is</em> a valid max-heap, and no swaps are needed.</p>
+<p>Note that the array is not sorted — 15 and 18 are out of order as siblings. A heap only orders each parent against its own children.</p>
+</div>
+</details>
+
+<details>
+<summary><span class="pill supp">exam-hard</span> Show that heapsort is O(n log n) and uses O(1) extra space, and explain why it is not stable.</summary>
+<div class="details-body">
+<p><strong>Time.</strong> build-heap is \(O(n)\). Then \(n-1\) iterations, each a swap plus a sift-down of cost at most \(O(\log n)\). Total \(O(n) + O(n \log n) = O(n \log n)\).</p>
+<p><strong>Space.</strong> Everything happens inside the input array; only a few index variables are needed, so auxiliary space is \(O(1)\).</p>
+<p><strong>Instability.</strong> The swap of the root with the last element moves an element from the far end of the array to the front, past any number of equal keys, with no way to preserve their relative order. Stability requires that equal keys never cross, which a long-distance swap violates.</p>
+</div>
+</details>
+
+<h2 id="p7">Chapter 7 — Graphs</h2>
+
+<details>
+<summary><span class="pill">applied</span> A graph has 7 vertices and 8 edges and is connected. Is it a tree? How many edges must you remove to make it one?</summary>
+<div class="details-body">
+<p>A tree on 7 vertices has exactly 6 edges. With 8 edges the graph is connected and has \(8 - 7 + 1 = 2\) independent cycles, so it is not a tree.</p>
+<p>You must remove 2 edges, one from each cycle, to break both without disconnecting the graph.</p>
+</div>
+</details>
+
+<details>
+<summary><span class="pill supp">exam-hard</span> Prove that a connected graph with V vertices and V − 1 edges is acyclic.</summary>
+<div class="details-body">
+<p>Let the graph be connected. Any connected graph on \(V\) vertices has at least \(V-1\) edges — take a spanning tree, which has exactly \(V-1\).</p>
+<p>Suppose the graph had a cycle. Removing one edge of that cycle keeps it connected, giving a connected graph with \(V-2\) edges, contradicting the minimum of \(V-1\). Hence no cycle exists. ∎</p>
+</div>
+</details>
+
+<h2 id="p8">Chapter 8 — BFS</h2>
+
+<details>
+<summary><span class="pill">applied</span> Run BFS from vertex 1 on edges 1–2, 1–3, 2–4, 2–5, 3–6, 3–7, 5–8. Give distances and the BFS tree.</summary>
+<div class="details-body">
+<p>Distances: \(d(1)=0\); \(d(2)=d(3)=1\); \(d(4)=d(5)=d(6)=d(7)=2\); \(d(8)=3\).</p>
+<p>BFS tree edges: (1,2), (1,3), (2,4), (2,5), (3,6), (3,7), (5,8).</p>
+<p>Visit order: 1, 2, 3, 4, 5, 6, 7, 8. Note that 8 is reached at distance 3 through 5, not through any shorter route.</p>
+</div>
+</details>
+
+<details>
+<summary><span class="pill supp">exam-hard</span> A student claims BFS finds shortest paths in any weighted graph. Refute it.</summary>
+<div class="details-body">
+<p>Counterexample: vertices A, B, C with edges A–B of weight 10, A–C of weight 1, C–B of weight 1.</p>
+<p>BFS from A visits C and B at distance 1 edge each, and reports the path A→B at cost 10 as a shortest path because it has the fewest edges. The genuinely cheapest path is A→C→B at cost 2.</p>
+<p>BFS minimises the number of edges. To minimise total weight you need a priority queue ordered by accumulated cost — that is Dijkstra's algorithm.</p>
+</div>
+</details>
+
+<h2 id="p9">Chapter 9 — DFS</h2>
+
+<details>
+<summary><span class="pill">applied</span> Give a topological order for the DAG with edges 1→2, 1→3, 2→4, 3→4. Is it unique?</summary>
+<div class="details-body">
+<p>In-degrees: 1:0, 2:1, 3:1, 4:2. Start with 1 (the only source). Removing it leaves 2 and 3 both at in-degree 0, so either can come next.</p>
+<p>Both <code>1, 2, 3, 4</code> and <code>1, 3, 2, 4</code> are valid. The order is not unique in general — it is unique only when the DAG has a Hamiltonian path.</p>
+</div>
+</details>
+
+<details>
+<summary><span class="pill supp">exam-hard</span> Why does DFS detect cycles in a directed graph but BFS does not, given that both traverse the same edges?</summary>
+<div class="details-body">
+<p>DFS maintains the <em>recursion stack</em>: the set of vertices on the current path from the root. A back edge — an edge to a vertex that is currently grey, meaning still on that path — closes a cycle directly.</p>
+<p>BFS processes vertices level by level and has no notion of a current path; when it meets an already-visited vertex it cannot tell whether that vertex is an ancestor or a distant cousin. Detecting a directed cycle with BFS requires extra machinery, which is why DFS is the standard tool.</p>
+</div>
+</details>
+
+<h2 id="p10">Chapter 10 — Minimum spanning trees</h2>
+
+<details>
+<summary><span class="pill">applied</span> Run Kruskal on edges A–B 4, A–C 2, B–C 1, B–D 5, C–D 8, C–E 10, D–E 2, D–F 6, E–F 3. Give the MST and its weight.</summary>
+<div class="details-body">
+<p>Sorted: BC 1, AC 2, DE 2, EF 3, AB 4, BD 5, DF 6, CD 8, CE 10.</p>
+<p>Accept BC, AC, DE, EF. Reject AB (cycle A-B-C-A). Accept BD, which joins the two components.</p>
+<p>Five edges for six vertices: {BC, AC, DE, EF, BD}, total \(1+2+2+3+5 = 13\).</p>
+</div>
+</details>
+
+<details>
+<summary><span class="pill supp">exam-hard</span> Prove the cut property: the lightest edge crossing any cut belongs to some MST.</summary>
+<div class="details-body">
+<p>Let \(e\) be the lightest edge crossing cut \((S, V-S)\), and let \(T\) be an MST not containing \(e\). Adding \(e\) to \(T\) creates a unique cycle. That cycle crosses the cut an even number of times, so it contains at least one other crossing edge \(f \ne e\).</p>
+<p>By the choice of \(e\), \(w(e) \le w(f)\). Then \(T' = T - f + e\) is a spanning tree — removing a cycle edge preserves connectivity and acyclicity — and \(w(T') = w(T) - w(f) + w(e) \le w(T)\).</p>
+<p>Since \(T\) was minimum, \(w(T') = w(T)\), so \(T'\) is also an MST and it contains \(e\). ∎</p>
+</div>
+</details>
+
+<footer style="margin-top:56px;padding-top:22px;border-top:1px solid var(--rule);font-size:13px;color:var(--ink-3)">
+  <p style="margin:0 0 6px"><strong style="color:var(--ink-2)">Data Structures and Programming Fundamentals</strong> — an interactive textbook built from the CS213/293 lecture series, with Cormen et al. and Balagurusamy as references.</p>
+  <p style="margin:0">Progress is saved in this browser only. <a href="glossary.html">Glossary</a> · <a href="practice.html">Practice</a> · <a href="visualizers.html">Visualizers</a></p>
+</footer>
+</main>
+</div>
+<script>window.DSPF_SEARCH = [{"title": "01 · Measuring Cost: Complexity and Asymptotic Notation", "topic": "Chapter", "url": "topics/01-complexity.html", "keywords": "Big-O, asymptotic, growth rate, amortized, recurrence, complexity Why we compare algorithms by growth, and how to read O, Omega, Theta, o and omega."}, {"title": "02 · Stacks, Queues and Linked Lists", "topic": "Chapter", "url": "topics/02-stacks-queues.html", "keywords": "stack, queue, linked list, circular buffer, deque, LIFO, FIFO LIFO and FIFO containers, how they are built on arrays and pointers, and why the circular buffer exists."}, {"title": "03 · Trees and Traversals", "topic": "Chapter", "url": "topics/03-trees.html", "keywords": "tree, binary tree, preorder, inorder, postorder, level order, traversal Tree terminology, representations, and the four ways to walk a binary tree."}, {"title": "04 · Binary Search Trees", "topic": "Chapter", "url": "topics/04-bst.html", "keywords": "BST, binary search tree, insert, delete, successor, height Ordering a tree so search becomes logarithmic - and the degenerate case that breaks it."}, {"title": "05 · AVL Trees and Rotations", "topic": "Chapter", "url": "topics/05-avl.html", "keywords": "AVL, rotation, balance factor, LL, RR, LR, RL, height bound Restoring the balance invariant with four rotation cases, and why height is guaranteed logarithmic."}, {"title": "06 · Heaps and Heapsort", "topic": "Chapter", "url": "topics/06-heaps.html", "keywords": "heap, priority queue, heapify, build-heap, heapsort, sift Partial sorting in an array: priority queues, heapify, build-heap and heapsort."}, {"title": "07 · Graphs: Terminology and Representation", "topic": "Chapter", "url": "topics/07-graphs.html", "keywords": "graph, adjacency matrix, adjacency list, directed, degree, cycle Vertices, edges, paths and cycles, and the two ways to store a graph."}, {"title": "08 · Breadth-First Search", "topic": "Chapter", "url": "topics/08-bfs.html", "keywords": "BFS, breadth-first, queue, shortest path, connected components, bipartite, diameter Ring-by-ring exploration with a queue, shortest unweighted paths, components and bipartiteness."}, {"title": "09 · Depth-First Search", "topic": "Chapter", "url": "topics/09-dfs.html", "keywords": "DFS, depth-first, stack, topological sort, cycle, strongly connected, finish time Going deep with a stack: discovery and finish times, cycle detection and topological sort."}, {"title": "10 · Minimum Spanning Trees", "topic": "Chapter", "url": "topics/10-mst.html", "keywords": "MST, minimum spanning tree, Kruskal, Prim, union-find, cut property, greedy Kruskal, Prim and the cut property that makes both of them correct."}, {"title": "Interactive Visualizers", "topic": "Tool", "url": "visualizers.html", "keywords": "Drive the algorithms yourself: stack, queue, BST, heap, BFS/DFS and growth rates."}, {"title": "Practice and Examination Questions", "topic": "Tool", "url": "practice.html", "keywords": "Graded questions with full worked solutions, from recall to exam-hard."}, {"title": "Glossary", "topic": "Tool", "url": "glossary.html", "keywords": "Every term used in the course, defined in one line."}, {"title": "Why we need a way to measure cost", "topic": "Ch 01", "url": "topics/01-complexity.html#why", "keywords": "Why we need a way to measure cost"}, {"title": "Counting operations", "topic": "Ch 01", "url": "topics/01-complexity.html#counting", "keywords": "Counting operations"}, {"title": "The five notations", "topic": "Ch 01", "url": "topics/01-complexity.html#notation", "keywords": "The five notations"}, {"title": "The growth hierarchy", "topic": "Ch 01", "url": "topics/01-complexity.html#hierarchy", "keywords": "The growth hierarchy"}, {"title": "How to analyse a piece of code", "topic": "Ch 01", "url": "topics/01-complexity.html#analysis", "keywords": "How to analyse a piece of code"}, {"title": "Recurrences", "topic": "Ch 01", "url": "topics/01-complexity.html#recurrences", "keywords": "Recurrences"}, {"title": "Amortised analysis: the doubling array", "topic": "Ch 01", "url": "topics/01-complexity.html#amortized", "keywords": "Amortised analysis: the doubling array"}, {"title": "Space complexity", "topic": "Ch 01", "url": "topics/01-complexity.html#space", "keywords": "Space complexity"}, {"title": "C and Python implementations", "topic": "Ch 01", "url": "topics/01-complexity.html#code", "keywords": "C and Python implementations"}, {"title": "Common mistakes", "topic": "Ch 01", "url": "topics/01-complexity.html#mistakes", "keywords": "Common mistakes"}, {"title": "Check your understanding", "topic": "Ch 01", "url": "topics/01-complexity.html#check", "keywords": "Check your understanding"}, {"title": "Two ways to decide who goes next", "topic": "Ch 02", "url": "topics/02-stacks-queues.html#why", "keywords": "Two ways to decide who goes next"}, {"title": "Abstract data type versus implementation", "topic": "Ch 02", "url": "topics/02-stacks-queues.html#adt", "keywords": "Abstract data type versus implementation"}, {"title": "Implementations and their costs", "topic": "Ch 02", "url": "topics/02-stacks-queues.html#implementations", "keywords": "Implementations and their costs"}, {"title": "Linked lists", "topic": "Ch 02", "url": "topics/02-stacks-queues.html#linked", "keywords": "Linked lists"}, {"title": "C implementation", "topic": "Ch 02", "url": "topics/02-stacks-queues.html#code", "keywords": "C implementation"}, {"title": "Python implementation", "topic": "Ch 02", "url": "topics/02-stacks-queues.html#python", "keywords": "Python implementation"}, {"title": "Common mistakes", "topic": "Ch 02", "url": "topics/02-stacks-queues.html#mistakes", "keywords": "Common mistakes"}, {"title": "Check your understanding", "topic": "Ch 02", "url": "topics/02-stacks-queues.html#check", "keywords": "Check your understanding"}, {"title": "From a line to a hierarchy", "topic": "Ch 03", "url": "topics/03-trees.html#why", "keywords": "From a line to a hierarchy"}, {"title": "Terminology", "topic": "Ch 03", "url": "topics/03-trees.html#terminology", "keywords": "Terminology"}, {"title": "Counting facts worth memorising", "topic": "Ch 03", "url": "topics/03-trees.html#counting", "keywords": "Counting facts worth memorising"}, {"title": "Representing a binary tree", "topic": "Ch 03", "url": "topics/03-trees.html#representation", "keywords": "Representing a binary tree"}, {"title": "The four traversals", "topic": "Ch 03", "url": "topics/03-trees.html#traversals", "keywords": "The four traversals"}, {"title": "C implementation", "topic": "Ch 03", "url": "topics/03-trees.html#code", "keywords": "C implementation"}, {"title": "Python implementation", "topic": "Ch 03", "url": "topics/03-trees.html#python", "keywords": "Python implementation"}, {"title": "Complexity summary", "topic": "Ch 03", "url": "topics/03-trees.html#complexity", "keywords": "Complexity summary"}, {"title": "Check your understanding", "topic": "Ch 03", "url": "topics/03-trees.html#check", "keywords": "Check your understanding"}, {"title": "Adding order to a tree", "topic": "Ch 04", "url": "topics/04-bst.html#why", "keywords": "Adding order to a tree"}, {"title": "The operations", "topic": "Ch 04", "url": "topics/04-bst.html#operations", "keywords": "The operations"}, {"title": "Deletion, the three cases", "topic": "Ch 04", "url": "topics/04-bst.html#delete", "keywords": "Deletion, the three cases"}, {"title": "The successor, and why it works", "topic": "Ch 04", "url": "topics/04-bst.html#successor", "keywords": "The successor, and why it works"}, {"title": "The degenerate case", "topic": "Ch 04", "url": "topics/04-bst.html#degenerate", "keywords": "The degenerate case"}, {"title": "C implementation", "topic": "Ch 04", "url": "topics/04-bst.html#code", "keywords": "C implementation"}, {"title": "Python implementation", "topic": "Ch 04", "url": "topics/04-bst.html#python", "keywords": "Python implementation"}, {"title": "Common mistakes", "topic": "Ch 04", "url": "topics/04-bst.html#mistakes", "keywords": "Common mistakes"}, {"title": "Check your understanding", "topic": "Ch 04", "url": "topics/04-bst.html#check", "keywords": "Check your understanding"}, {"title": "Fixing the degenerate case", "topic": "Ch 05", "url": "topics/05-avl.html#why", "keywords": "Fixing the degenerate case"}, {"title": "The height bound, and why it matters", "topic": "Ch 05", "url": "topics/05-avl.html#heightbound", "keywords": "The height bound, and why it matters"}, {"title": "The four rotation cases", "topic": "Ch 05", "url": "topics/05-avl.html#rotations", "keywords": "The four rotation cases"}, {"title": "Insertion versus deletion", "topic": "Ch 05", "url": "topics/05-avl.html#insertdelete", "keywords": "Insertion versus deletion"}, {"title": "C implementation", "topic": "Ch 05", "url": "topics/05-avl.html#code", "keywords": "C implementation"}, {"title": "Complexity", "topic": "Ch 05", "url": "topics/05-avl.html#complexity", "keywords": "Complexity"}, {"title": "Check your understanding", "topic": "Ch 05", "url": "topics/05-avl.html#check", "keywords": "Check your understanding"}, {"title": "Giving up order to keep one fact", "topic": "Ch 06", "url": "topics/06-heaps.html#why", "keywords": "Giving up order to keep one fact"}, {"title": "The heap property and the array layout", "topic": "Ch 06", "url": "topics/06-heaps.html#property", "keywords": "The heap property and the array layout"}, {"title": "Operations", "topic": "Ch 06", "url": "topics/06-heaps.html#operations", "keywords": "Operations"}, {"title": "Worked trace — build-heap", "topic": "Ch 06", "url": "topics/06-heaps.html#trace", "keywords": "Worked trace — build-heap"}, {"title": "Insert and delete-max traces", "topic": "Ch 06", "url": "topics/06-heaps.html#insertdelete", "keywords": "Insert and delete-max traces"}, {"title": "Heapsort", "topic": "Ch 06", "url": "topics/06-heaps.html#heapsort", "keywords": "Heapsort"}, {"title": "Common mistakes", "topic": "Ch 06", "url": "topics/06-heaps.html#mistakes", "keywords": "Common mistakes"}, {"title": "Check your understanding", "topic": "Ch 06", "url": "topics/06-heaps.html#check", "keywords": "Check your understanding"}, {"title": "Dropping the no-cycles rule", "topic": "Ch 07", "url": "topics/07-graphs.html#why", "keywords": "Dropping the no-cycles rule"}, {"title": "Terminology", "topic": "Ch 07", "url": "topics/07-graphs.html#terminology", "keywords": "Terminology"}, {"title": "The two representations", "topic": "Ch 07", "url": "topics/07-graphs.html#representation", "keywords": "The two representations"}, {"title": "C implementation", "topic": "Ch 07", "url": "topics/07-graphs.html#code", "keywords": "C implementation"}, {"title": "Check your understanding", "topic": "Ch 07", "url": "topics/07-graphs.html#check", "keywords": "Check your understanding"}, {"title": "Exploring in rings", "topic": "Ch 08", "url": "topics/08-bfs.html#why", "keywords": "Exploring in rings"}, {"title": "Why BFS finds shortest paths", "topic": "Ch 08", "url": "topics/08-bfs.html#why-shortest", "keywords": "Why BFS finds shortest paths"}, {"title": "Worked trace", "topic": "Ch 08", "url": "topics/08-bfs.html#trace", "keywords": "Worked trace"}, {"title": "What BFS is used for", "topic": "Ch 08", "url": "topics/08-bfs.html#applications", "keywords": "What BFS is used for"}, {"title": "C and Python", "topic": "Ch 08", "url": "topics/08-bfs.html#code", "keywords": "C and Python"}, {"title": "Check your understanding", "topic": "Ch 08", "url": "topics/08-bfs.html#check", "keywords": "Check your understanding"}, {"title": "Going as deep as possible", "topic": "Ch 09", "url": "topics/09-dfs.html#why", "keywords": "Going as deep as possible"}, {"title": "Edge classification", "topic": "Ch 09", "url": "topics/09-dfs.html#edgeclass", "keywords": "Edge classification"}, {"title": "What DFS is used for", "topic": "Ch 09", "url": "topics/09-dfs.html#applications", "keywords": "What DFS is used for"}, {"title": "C and Python", "topic": "Ch 09", "url": "topics/09-dfs.html#code", "keywords": "C and Python"}, {"title": "Check your understanding", "topic": "Ch 09", "url": "topics/09-dfs.html#check", "keywords": "Check your understanding"}, {"title": "Connecting everything as cheaply as possible", "topic": "Ch 10", "url": "topics/10-mst.html#why", "keywords": "Connecting everything as cheaply as possible"}, {"title": "The cut property — why both algorithms work", "topic": "Ch 10", "url": "topics/10-mst.html#cut", "keywords": "The cut property — why both algorithms work"}, {"title": "Kruskal's algorithm", "topic": "Ch 10", "url": "topics/10-mst.html#kruskal", "keywords": "Kruskal's algorithm"}, {"title": "Prim's algorithm", "topic": "Ch 10", "url": "topics/10-mst.html#prim", "keywords": "Prim's algorithm"}, {"title": "The same graph by both methods", "topic": "Ch 10", "url": "topics/10-mst.html#trace", "keywords": "The same graph by both methods"}, {"title": "C implementation", "topic": "Ch 10", "url": "topics/10-mst.html#code", "keywords": "C implementation"}, {"title": "Common mistakes", "topic": "Ch 10", "url": "topics/10-mst.html#mistakes", "keywords": "Common mistakes"}, {"title": "Check your understanding", "topic": "Ch 10", "url": "topics/10-mst.html#check", "keywords": "Check your understanding"}];</script>
+<script src="assets/app.js"></script>
+</body>
+</html>
