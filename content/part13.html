@@ -1,0 +1,415 @@
+<!--TOPIC:11-shortest-paths|Shortest Paths|-->
+<div class="box warn">
+<span class="box-label">Supplementary — outside the examinable syllabus</span>
+<p>This chapter is <strong>not</strong> covered by the ten lecture sessions for this course. Your graph material is lectures 13 (terminology), 14 (BFS), 15 (DFS) and 16 (MST); there is no shortest-path lecture. It is included because it is the natural next question after BFS and because Dijkstra is referenced repeatedly in chapters 8 and 10 as a contrast. Revise it after the examinable chapters, not before.</p>
+</div>
+
+<h2 id="problem">The problem</h2>
+
+<p>Chapter 8 established that BFS finds the path with the fewest <em>edges</em>. Once edges carry weights, fewest edges and cheapest path are different questions, and BFS answers the wrong one.</p>
+
+<div class="box def">
+<span class="box-label">Definition — single-source shortest paths</span>
+<p>Given a weighted graph \(G = (V, E)\) with edge weights \(w(u,v)\) and a source \(s\), find for every vertex \(v\) the minimum total weight \(\delta(s,v)\) of any path from \(s\) to \(v\), and a path achieving it.</p>
+</div>
+
+<p>Three algorithms cover the space, and the choice between them is decided by two questions: do you need one source or all pairs, and can any edge weight be negative?</p>
+
+<div class="tablewrap"><table>
+<thead><tr><th>Algorithm</th><th>Solves</th><th>Negative weights</th><th>Time</th></tr></thead>
+<tbody>
+<tr><td>BFS</td><td>Single source, <em>unweighted</em></td><td>n/a</td><td>\(O(V+E)\)</td></tr>
+<tr><td>Dijkstra</td><td>Single source</td><td><strong>No</strong></td><td>\(O((V+E)\log V)\)</td></tr>
+<tr><td>Bellman–Ford</td><td>Single source</td><td><strong>Yes</strong>, and detects negative cycles</td><td>\(O(VE)\)</td></tr>
+<tr><td>Floyd–Warshall</td><td><strong>All pairs</strong></td><td><strong>Yes</strong>, and detects negative cycles</td><td>\(O(V^3)\)</td></tr>
+</tbody></table></div>
+
+<h2 id="relaxation">The one idea all three share: relaxation</h2>
+
+<p>Every algorithm below maintains an array <code>dist[]</code> holding the best known distance to each vertex, initialised to infinity except <code>dist[s] = 0</code>. The core operation is <strong>relaxation</strong>: if going through \(u\) reaches \(v\) more cheaply than the current best, update it.</p>
+
+<div class="formula" style="font-family:var(--font-mono);background:var(--paper-2);border:1px solid var(--rule-2);border-radius:9px;padding:14px 18px;margin:18px 0;white-space:pre;overflow-x:auto;font-size:13px;line-height:1.8">RELAX(u, v, w):
+    if dist[u] + w(u,v) &lt; dist[v]:
+        dist[v] = dist[u] + w(u,v)
+        parent[v] = u</div>
+
+<p>The three algorithms differ only in <em>how many times and in what order</em> they relax edges. Dijkstra relaxes each edge once, from vertices taken in increasing order of distance. Bellman–Ford relaxes every edge \(V-1\) times, which is enough for any shortest path since a simple path has at most \(V-1\) edges. Floyd–Warshall relaxes over every possible intermediate vertex.</p>
+
+<h2 id="dijkstra">Dijkstra's algorithm</h2>
+
+<h3>The idea</h3>
+
+<p>Grow a set \(S\) of vertices whose final distance is known. Repeatedly take the vertex \(u \notin S\) with the smallest tentative distance, add it to \(S\), and relax all its outgoing edges. Because the smallest tentative distance is never wrong, each vertex is finalised once.</p>
+
+<div class="codeblock">
+  <div class="codeblock-header"><span class="lang">Pseudocode</span><span class="file">Dijkstra</span></div>
+<pre><code class="language-c">DIJKSTRA(G, w, s):
+    for each v: dist[v] = infinity; parent[v] = nil
+    dist[s] = 0
+    S = empty                       # finalised vertices
+    PQ = all vertices keyed by dist
+
+    while PQ not empty:
+        u = extract-min(PQ)         # smallest tentative distance
+        S = S + {u}
+        for each neighbour v of u:
+            RELAX(u, v, w)          # may call decrease-key on PQ</code></pre>
+</div>
+
+<p><strong>Complexity:</strong> \(O((V+E)\log V)\) with a binary heap, \(O(V^2)\) with an array scan (better for dense graphs), \(O(E + V\log V)\) with a Fibonacci heap.</p>
+
+<h3>Why non-negative weights are required</h3>
+
+<div class="box warn">
+<span class="box-label">The failure, and why it happens</span>
+<p>Dijkstra assumes that once a vertex is extracted with the smallest tentative distance, no cheaper route to it can appear later. That is true only if all weights are non-negative: a later route would have to pass through a vertex with an even smaller distance, which has already been extracted, and then add a non-negative amount.</p>
+<p><strong>Counterexample.</strong> Vertices A, B, C. Edges A–B weight 2, A–C weight 5, C–B weight −4. Dijkstra extracts A, sets dist[B] = 2 and dist[C] = 5, then extracts B with distance 2 and finalises it. But the true distance to B is A→C→B = 5 + (−4) = 1. The algorithm reports 2. A negative edge broke the assumption.</p>
+</div>
+
+<h3>Worked trace</h3>
+
+<div class="box example">
+<span class="box-label">Dijkstra from A</span>
+<p>Edges: A–B 4, A–C 2, B–C 1, B–D 5, C–D 8, C–E 10, D–E 2, D–F 6, E–F 3.</p>
+<div class="tablewrap"><table>
+<thead><tr><th>Extract</th><th>dist after relaxing</th><th>Finalised</th></tr></thead>
+<tbody>
+<tr><td>A (0)</td><td>B=4, C=2</td><td>{A}</td></tr>
+<tr><td>C (2)</td><td>B=min(4, 2+1)=3, D=10, E=12</td><td>{A,C}</td></tr>
+<tr><td>B (3)</td><td>D=min(10, 3+5)=8</td><td>{A,C,B}</td></tr>
+<tr><td>D (8)</td><td>E=min(12, 8+2)=10, F=14</td><td>{A,C,B,D}</td></tr>
+<tr><td>E (10)</td><td>F=min(14, 10+3)=13</td><td>{A,C,B,D,E}</td></tr>
+<tr><td>F (13)</td><td>—</td><td>all</td></tr>
+</tbody></table></div>
+<p>Final distances: A=0, B=3, C=2, D=8, E=10, F=13. Note B's distance improved from 4 to 3 when C was processed — that is relaxation doing its work.</p>
+</div>
+
+<h2 id="bellmanford">Bellman–Ford</h2>
+
+<h3>The idea</h3>
+
+<p>Relax <em>every</em> edge, \(V-1\) times over. A shortest path uses at most \(V-1\) edges, so after \(k\) full passes every shortest path of at most \(k\) edges is correct. After \(V-1\) passes everything reachable is correct.</p>
+
+<p>The extra power is the <strong>negative cycle test</strong>: run one more pass, and if any edge can still be relaxed, a negative cycle exists — a cycle whose total weight is negative, around which you could loop forever to make the distance arbitrarily small. No well-defined shortest path exists in that case.</p>
+
+<div class="codeblock">
+  <div class="codeblock-header"><span class="lang">Pseudocode</span><span class="file">Bellman-Ford</span></div>
+<pre><code class="language-c">BELLMAN-FORD(G, w, s):
+    for each v: dist[v] = infinity; parent[v] = nil
+    dist[s] = 0
+
+    repeat V-1 times:
+        for each edge (u, v) in E:
+            RELAX(u, v, w)
+
+    # V-th pass: any relaxation means a negative cycle
+    for each edge (u, v) in E:
+        if dist[u] + w(u,v) &lt; dist[v]:
+            return "negative cycle reachable from s"
+
+    return dist</code></pre>
+</div>
+
+<p><strong>Complexity:</strong> \(O(VE)\) time, \(O(V)\) space. On a sparse graph that is \(O(V^2)\), which is why Dijkstra is preferred whenever weights are non-negative.</p>
+
+<div class="box example">
+<span class="box-label">Worked example — negative edges but no negative cycle</span>
+<p>Edges: A–B 6, A–C 7, B–C 8, B–D 5, B–E −4, C–D −3, C–E 9, D–F 2, E–F 7, E–D 7. Source A.</p>
+<p>Pass 1: B=6, C=7. Then from B: D=11, E=2. From C: D=min(11, 4)=4, E=min(2,16)=2. From D: F=6. From E: F=min(6,9)=6, D=min(4,9)=4.</p>
+<p>Pass 2: no edge improves anything — because the negative edge B→E was processed before C→D, distances settled in one pass. In general you need up to \(V-1\) passes; this graph happens to converge early, which is why implementations often track whether a pass changed anything and stop.</p>
+<p>The final distances use the negative edge: \(\delta(A,E) = 6 + (-4) = 2\), which Dijkstra would have computed correctly here only by luck of ordering.</p>
+</div>
+
+<div class="box warn">
+<span class="box-label">Negative cycle vs negative edge</span>
+<p>A <strong>negative edge</strong> is fine for Bellman–Ford; it just needs more passes. A <strong>negative cycle</strong> makes the problem ill-posed: the distance to any vertex reachable from the cycle is \(-\infty\). The V-th pass is the test that distinguishes them, and an exam question will usually ask you to state which one you have.</p>
+</div>
+
+<h2 id="floyd">Floyd–Warshall</h2>
+
+<h3>The idea</h3>
+
+<p>All-pairs shortest paths by dynamic programming. Number the vertices \(1 \ldots V\) and let \(d^{(k)}(i,j)\) be the cheapest path from \(i\) to \(j\) using only vertices from \(\{1,\ldots,k\}\) as intermediates. Either the path avoids \(k\), or it goes through \(k\):</p>
+
+\[
+d^{(k)}(i,j) = \min\Bigl(d^{(k-1)}(i,j),\; d^{(k-1)}(i,k) + d^{(k-1)}(k,j)\Bigr)
+\]
+
+<p>That is the whole algorithm: three nested loops, one line in the middle.</p>
+
+<div class="codeblock">
+  <div class="codeblock-header"><span class="lang">Pseudocode</span><span class="file">Floyd-Warshall</span></div>
+<pre><code class="language-c">FLOYD-WARSHALL(W):                 # W[i][j] = edge weight, or infinity
+    D = copy of W
+    for i in 1..V: D[i][i] = 0
+
+    for k in 1..V:                  # k must be the OUTER loop
+        for i in 1..V:
+            for j in 1..V:
+                if D[i][k] + D[k][j] &lt; D[i][j]:
+                    D[i][j] = D[i][k] + D[k][j]
+
+    return D</code></pre>
+</div>
+
+<p><strong>Complexity:</strong> \(O(V^3)\) time, \(O(V^2)\) space. Negative edges are fine; a negative value on the diagonal \(D[i][i]\) afterwards indicates a negative cycle.</p>
+
+<div class="box warn">
+<span class="box-label">The one implementation detail that matters</span>
+<p><code>k</code> must be the <strong>outermost</strong> loop. Swapping it inward gives a different, incorrect algorithm — it would only consider paths whose intermediate vertices appear in a fixed order. This is the single most common Floyd–Warshall error, and it is worth being able to explain <em>why</em>: the recurrence is defined over the set of permitted intermediates, so that set must be built up one vertex at a time, outside the pair loops.</p>
+</div>
+
+<div class="box example">
+<span class="box-label">Worked example — a 4-vertex graph</span>
+<p>Adjacency matrix with infinity (∞) for absent edges:</p>
+<div class="codeblock">
+  <div class="codeblock-header"><span class="lang">Initial</span><span class="file">D⁰</span></div>
+<pre><code class="language-c">      1    2    3    4
+ 1 [  0    3    6    ∞ ]
+ 2 [  ∞    0    ∞    1 ]
+ 3 [  ∞   -2    0    ∞ ]
+ 4 [  2    ∞    ∞    0 ]</code></pre>
+</div>
+<p>Note the negative edge 3→2 of weight −2. After \(k = 1\): no improvement through vertex 1 except 4→2 = 2+3 = 5. After \(k = 2\): 3→2→4 gives 3→4 = −2 + 1 = −1, and 1→2→4 gives 3 + 1 = 4. After \(k = 3\): 2→3→2 would be −2, but 2→3 is ∞ so no change; 4→1→... unchanged. Final distances include \(d(3,4) = -1\) and \(d(4,2) = 5\).</p>
+<p>No negative value appears on the diagonal, so there is no negative cycle.</p>
+</div>
+
+<h2 id="code">C implementation</h2>
+
+<div class="codeblock">
+  <div class="codeblock-header"><span class="lang">C</span><span class="file">shortest_paths.c</span><button class="copy-btn">Copy</button></div>
+<pre><code class="language-c">#include &lt;stdio.h&gt;
+#include &lt;limits.h&gt;
+
+#define V 6
+#define INF INT_MAX
+
+/* ---------- Dijkstra on an adjacency matrix, O(V^2) ---------- */
+void dijkstra(int w[V][V], int src) {
+    int dist[V], done[V];
+    for (int i = 0; i &lt; V; i++) { dist[i] = INF; done[i] = 0; }
+    dist[src] = 0;
+
+    for (int step = 0; step &lt; V; step++) {
+        int u = -1, best = INF;
+        for (int i = 0; i &lt; V; i++)
+            if (!done[i] &amp;&amp; dist[i] &lt; best) { best = dist[i]; u = i; }
+        if (u == -1) break;                 /* remaining unreachable */
+        done[u] = 1;
+        for (int v = 0; v &lt; V; v++)
+            if (w[u][v] != INF &amp;&amp; dist[u] != INF &amp;&amp;
+                dist[u] + w[u][v] &lt; dist[v])
+                dist[v] = dist[u] + w[u][v];
+    }
+    printf("Dijkstra from %d:\n", src);
+    for (int i = 0; i &lt; V; i++)
+        printf("  %d: %s%d\n", i, dist[i] == INF ? "unreachable " : "", dist[i]);
+}
+
+/* ---------- Bellman-Ford on an edge list, O(VE) ---------- */
+typedef struct { int u, v, w; } Edge;
+
+int bellman_ford(Edge e[], int m, int src, int dist[]) {
+    for (int i = 0; i &lt; V; i++) dist[i] = INF;
+    dist[src] = 0;
+
+    for (int pass = 0; pass &lt; V - 1; pass++)
+        for (int i = 0; i &lt; m; i++)
+            if (dist[e[i].u] != INF &amp;&amp;
+                dist[e[i].u] + e[i].w &lt; dist[e[i].v])
+                dist[e[i].v] = dist[e[i].u] + e[i].w;
+
+    for (int i = 0; i &lt; m; i++)             /* V-th pass: detection */
+        if (dist[e[i].u] != INF &amp;&amp;
+            dist[e[i].u] + e[i].w &lt; dist[e[i].v])
+            return 0;                       /* negative cycle */
+    return 1;
+}
+
+/* ---------- Floyd-Warshall, O(V^3) ---------- */
+void floyd_warshall(int d[V][V]) {
+    for (int k = 0; k &lt; V; k++)             /* k OUTERMOST */
+        for (int i = 0; i &lt; V; i++)
+            for (int j = 0; j &lt; V; j++)
+                if (d[i][k] != INF &amp;&amp; d[k][j] != INF &amp;&amp;
+                    d[i][k] + d[k][j] &lt; d[i][j])
+                    d[i][j] = d[i][k] + d[k][j];
+}
+
+int main(void) {
+    int w[V][V];
+    for (int i = 0; i &lt; V; i++)
+        for (int j = 0; j &lt; V; j++)
+            w[i][j] = (i == j) ? 0 : INF;
+    /* A=0 B=1 C=2 D=3 E=4 F=5 */
+    w[0][1]=4; w[0][2]=2; w[1][2]=1; w[1][3]=5;
+    w[2][3]=8; w[2][4]=10; w[3][4]=2; w[3][5]=6; w[4][5]=3;
+
+    dijkstra(w, 0);          /* A:0 B:3 C:2 D:8 E:10 F:13 */
+
+    Edge e[] = {{0,1,6},{0,2,7},{1,2,8},{1,3,5},{1,4,-4},
+                {2,3,-3},{2,4,9},{3,5,2},{4,5,7},{4,3,7}};
+    int dist[V];
+    if (bellman_ford(e, 10, 0, dist)) {
+        printf("Bellman-Ford from 0:\n");
+        for (int i = 0; i &lt; V; i++) printf("  %d: %d\n", i, dist[i]);
+    } else {
+        printf("negative cycle detected\n");
+    }
+
+    floyd_warshall(w);
+    printf("All pairs (row 0): ");
+    for (int j = 0; j &lt; V; j++) printf("%d ", w[0][j]);
+    printf("\n");
+    return 0;
+}</code></pre>
+</div>
+
+<div class="codeblock">
+  <div class="codeblock-header"><span class="lang">Python</span><span class="file">shortest_paths.py</span><button class="copy-btn">Copy</button></div>
+<pre><code class="language-python">import heapq
+from math import inf
+
+
+def dijkstra(adj, source):
+    """Single source, non-negative weights. O((V+E) log V)."""
+    dist = {source: 0}
+    parent = {source: None}
+    pq = [(0, source)]
+    done = set()
+
+    while pq:
+        d, u = heapq.heappop(pq)
+        if u in done:
+            continue
+        done.add(u)
+        for v, w in adj.get(u, ()):
+            if w < 0:
+                raise ValueError("Dijkstra requires non-negative weights")
+            nd = d + w
+            if nd < dist.get(v, inf):
+                dist[v] = nd
+                parent[v] = u
+                heapq.heappush(pq, (nd, v))
+    return dist, parent
+
+
+def bellman_ford(n, edges, source):
+    """Handles negative edges; detects negative cycles. O(VE)."""
+    dist = {i: inf for i in range(n)}
+    dist[source] = 0
+
+    for _ in range(n - 1):
+        changed = False
+        for u, v, w in edges:
+            if dist[u] != inf and dist[u] + w < dist[v]:
+                dist[v] = dist[u] + w
+                changed = True
+        if not changed:                 # converged early
+            break
+
+    for u, v, w in edges:               # extra pass = detection
+        if dist[u] != inf and dist[u] + w < dist[v]:
+            return None, True           # negative cycle
+    return dist, False
+
+
+def floyd_warshall(n, edges):
+    """All pairs. O(V^3) time, O(V^2) space."""
+    d = [[inf] * n for _ in range(n)]
+    for i in range(n):
+        d[i][i] = 0
+    for u, v, w in edges:
+        d[u][v] = min(d[u][v], w)
+
+    for k in range(n):                  # k OUTERMOST
+        for i in range(n):
+            for j in range(n):
+                if d[i][k] + d[k][j] < d[i][j]:
+                    d[i][j] = d[i][k] + d[k][j]
+
+    negative_cycle = any(d[i][i] < 0 for i in range(n))
+    return d, negative_cycle
+
+
+if __name__ == "__main__":
+    adj = {"A": [("B", 4), ("C", 2)], "B": [("C", 1), ("D", 5)],
+           "C": [("D", 8), ("E", 10)], "D": [("E", 2), ("F", 6)],
+           "E": [("F", 3)], "F": []}
+    dist, _ = dijkstra(adj, "A")
+    print("dijkstra:", dict(sorted(dist.items())))
+
+    edges = [(0,1,6),(0,2,7),(1,2,8),(1,3,5),(1,4,-4),
+             (2,3,-3),(2,4,9),(3,5,2),(4,5,7),(4,3,7)]
+    dist, neg = bellman_ford(6, edges, 0)
+    print("bellman-ford:", dist, "negative cycle:", neg)
+
+    d, neg = floyd_warshall(6, edges)
+    print("floyd row 0:", d[0], "negative cycle:", neg)</code></pre>
+</div>
+
+<h2 id="choosing">Choosing between them</h2>
+
+<div class="tablewrap"><table>
+<thead><tr><th>Situation</th><th>Use</th><th>Why</th></tr></thead>
+<tbody>
+<tr><td>Unweighted graph, one source</td><td>BFS</td><td>\(O(V+E)\), and weights are all 1 so edges = cost</td></tr>
+<tr><td>Non-negative weights, one source, sparse</td><td>Dijkstra with a heap</td><td>\(O((V+E)\log V)\)</td></tr>
+<tr><td>Non-negative weights, one source, dense</td><td>Dijkstra with an array</td><td>\(O(V^2)\), simpler and faster in practice</td></tr>
+<tr><td>Any negative edges</td><td>Bellman–Ford</td><td>Dijkstra is incorrect; Bellman–Ford also detects negative cycles</td></tr>
+<tr><td>All pairs, dense graph</td><td>Floyd–Warshall</td><td>\(O(V^3)\) regardless of \(E\); also simple to code</td></tr>
+<tr><td>All pairs, sparse graph</td><td>Dijkstra or Bellman–Ford from each vertex</td><td>\(O(V(V+E)\log V)\) beats \(O(V^3)\) when \(E \ll V^2\)</td></tr>
+<tr><td>Distances that keep arriving (routing)</td><td>Bellman–Ford style</td><td>Distributed; each node only needs its neighbours</td></tr>
+</tbody></table></div>
+
+<div class="box example">
+<span class="box-label">MST versus shortest path — the distinction that trips people up</span>
+<p>In the graph of chapter 10 (A–B 4, A–C 2, B–C 1, B–D 5, C–D 8, C–E 10, D–E 2, D–F 6, E–F 3), the MST has total weight 13 and contains edges {BC, AC, DE, EF, BD}.</p>
+<p>Dijkstra from A gives \(\delta(A,F) = 13\) via A→C→B→D→E→F, using edges AC, CB, BD, DE, EF — which happens to be a subset of the MST here. That is a coincidence, not a theorem. Add an edge A–F of weight 20 and the shortest path to F becomes 20 while the MST still routes through the whole graph. The MST minimises <em>total edge weight across the tree</em>; shortest paths minimise <em>the distance from one source to one target</em>. An MST can contain a long detour to avoid a single expensive edge.</p>
+</div>
+
+<h2 id="mistakes">Common mistakes</h2>
+
+<ol>
+<li><strong>Using Dijkstra with negative weights.</strong> It silently returns wrong answers rather than failing, which is worse. The counterexample is in the warning box above.</li>
+<li><strong>Putting <code>k</code> inside the pair loops in Floyd–Warshall.</strong> The result is a different algorithm.</li>
+<li><strong>Running only one Bellman–Ford pass.</strong> You need \(V-1\), because a shortest path may use up to \(V-1\) edges.</li>
+<li><strong>Confusing an MST with a shortest-path tree.</strong> They optimise different objectives.</li>
+<li><strong>Forgetting the negative-cycle pass.</strong> Without it Bellman–Ford returns meaningless distances around the cycle.</li>
+<li><strong>Comparing <code>INF + w</code> in C.</strong> <code>INT_MAX + 4</code> overflows to a negative number and the comparison succeeds. Always guard with <code>dist[u] != INF</code>.</li>
+</ol>
+
+<h2 id="check">Check your understanding</h2>
+
+<div class="quiz">
+  <div class="qtext">A graph has a negative edge but no negative cycle. Which algorithms give correct shortest paths?</div>
+  <div class="opts">
+    <button class="opt">Dijkstra only</button>
+    <button class="opt" data-correct>Bellman–Ford and Floyd–Warshall, but not Dijkstra</button>
+    <button class="opt">All three</button>
+    <button class="opt">None — shortest paths are undefined</button>
+  </div>
+  <div class="fb">A negative edge breaks Dijkstra's assumption that the smallest tentative distance is final, so it can return a wrong answer. Bellman–Ford and Floyd–Warshall make no such assumption and handle negative edges fine. Shortest paths are only undefined when there is a negative <em>cycle</em>.</div>
+</div>
+
+<div class="quiz">
+  <div class="qtext">In Floyd–Warshall, why must <code>k</code> be the outermost loop?</div>
+  <div class="opts">
+    <button class="opt">It is only a convention for readability</button>
+    <button class="opt" data-correct>Because the recurrence builds up the set of permitted intermediate vertices one at a time, and that set must be complete before the pair loops consider a pair</button>
+    <button class="opt">Because it makes the algorithm O(V^2)</button>
+    <button class="opt">Because otherwise negative edges are not handled</button>
+  </div>
+  <div class="fb">d(k)(i,j) is defined as the best path using only vertices 1..k as intermediates. Layer k must be fully computed for every pair before layer k+1 begins, so k drives the outer loop. Swapping it inside gives a different, incorrect algorithm.</div>
+</div>
+
+<div class="quiz">
+  <div class="qtext">Bellman–Ford has finished its V−1 passes and one more edge can still be relaxed. What does that mean?</div>
+  <div class="opts">
+    <button class="opt">The graph is disconnected</button>
+    <button class="opt">You needed more passes</button>
+    <button class="opt" data-correct>A negative cycle is reachable from the source, so distances are undefined</button>
+    <button class="opt">The edge weights are too large</button>
+  </div>
+  <div class="fb">After V−1 passes every shortest path — which uses at most V−1 edges — is correct. If something can still be improved, the improvement must come from a cycle of negative total weight, around which you could loop indefinitely. V−1 passes is already the maximum needed, so more passes would not help.</div>
+</div>
