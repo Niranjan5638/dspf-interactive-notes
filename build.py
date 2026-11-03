@@ -115,6 +115,12 @@ def sidebar(rel, current):
     return '\n'.join(out)
 
 
+def checkbox(slug):
+    return ('<label class="chapter-check">'
+            f'<input type="checkbox" data-complete="topic-{slug}" aria-label="Mark this chapter complete">'
+            '<span class="cc-text">Mark this chapter complete</span></label>')
+
+
 def pager(rel, idx):
     if idx is None:
         return ''
@@ -185,6 +191,7 @@ def build():
         doc += '<div class="shell">\n' + sidebar("../", slug) + '\n<main>\n'
         doc += f'<div class="kicker">Chapter {num}</div>\n<h1>{html.escape(title)}</h1>\n'
         doc += f'<p class="lede">{html.escape(short)}</p>\n'
+        doc += checkbox(slug) + '\n'
         doc += body + '\n'
         doc += tail("../", search_json)
         path = os.path.join(TOPICS_DIR, f"{slug}.html")
@@ -201,6 +208,7 @@ def build():
         doc += '<div class="shell">\n' + sidebar("../", slug) + '\n<main>\n'
         doc += f'<div class="kicker">Supplementary chapter</div>\n<h1>{html.escape(title)}</h1>\n'
         doc += f'<p class="lede">{html.escape(short)}</p>\n'
+        doc += checkbox(slug) + '\n'
         doc += body + '\n'
         doc += tail("../", search_json)
         path = os.path.join(TOPICS_DIR, f"{slug}.html")
