@@ -1,0 +1,350 @@
+<!--TOPIC:01-complexity|Measuring Cost|-->
+<h2 id="why">Why we need a way to measure cost</h2>
+
+<p>Two programs solve the same problem. On my laptop, the first finishes in 0.4 seconds and the second in 0.7. Which one should you use?</p>
+
+<p>That question cannot be answered by the numbers alone, because the numbers depend on the machine, the compiler, the input size and what else was running. Change the input from a thousand items to a million and the ranking may reverse entirely. What we need is a measure that ignores the accidents of hardware and captures the thing that actually matters: <strong>how the work grows as the input grows</strong>.</p>
+
+<div class="box why">
+<span class="box-label">The intuition</span>
+<p>Imagine two runners. One is faster over 100 metres. The other tires more slowly. For a sprint you pick the first; for a marathon the second. Complexity analysis is the study of "how fast do you tire", and it is the only thing that predicts behaviour at large scale.</p>
+</div>
+
+<p>Concretely: an algorithm that takes \(n^2\) operations on input size \(n\) will, at \(n = 10{,}000\), need a hundred million operations. At \(n = 100{,}000\) it needs ten billion. An algorithm that takes \(n \log n\) needs about 133,000 and 1.66 million respectively. No amount of constant-factor tuning closes a gap that widens like that.</p>
+
+<h2 id="counting">Counting operations</h2>
+
+<p>We start by counting how many times the innermost statement of a piece of code executes, as a function of the input size \(n\).</p>
+
+<div class="codeblock">
+  <div class="codeblock-header"><span class="lang">C</span><span class="file">count1.c</span><button class="copy-btn">Copy</button></div>
+<pre><code class="language-c">int sum = 0;                        /* 1 operation        */
+for (int i = 0; i &lt; n; i++)         /* n+1 comparisons    */
+    sum += a[i];                    /* n additions        */</code></pre>
+</div>
+
+<p>The loop body runs exactly \(n\) times. The comparison runs \(n+1\) times, because it is tested once more to discover the loop is finished. So the total is about \(2n + 2\) operations. We will call that \(O(n)\).</p>
+
+<p>Now nest a second loop:</p>
+
+<div class="codeblock">
+  <div class="codeblock-header"><span class="lang">C</span><span class="file">count2.c</span><button class="copy-btn">Copy</button></div>
+<pre><code class="language-c">int count = 0;
+for (int i = 0; i &lt; n; i++)
+    for (int j = 0; j &lt; n; j++)
+        count++;                    /* runs n * n times   */</code></pre>
+</div>
+
+<p>The inner statement runs \(n^2\) times, so the cost is \(O(n^2)\). But notice the third pattern, which is the one students misjudge:</p>
+
+<div class="codeblock">
+  <div class="codeblock-header"><span class="lang">C</span><span class="file">count3.c</span><button class="copy-btn">Copy</button></div>
+<pre><code class="language-c">int count = 0;
+for (int i = 0; i &lt; n; i++)
+    for (int j = 0; j &lt; i; j++)     /* j stops at i, not n */
+        count++;</code></pre>
+</div>
+
+<p>The inner loop runs \(0\) times when \(i = 0\), \(1\) time when \(i = 1\), and so on up to \(n-1\). The total is</p>
+
+\[
+0 + 1 + 2 + \cdots + (n-1) = \frac{n(n-1)}{2} = \frac{n^2}{2} - \frac{n}{2}
+\]
+
+<p>which is still \(O(n^2)\). The factor of one half is irrelevant once we take the limit — that is exactly what asymptotic notation formalises.</p>
+
+<div class="box warn">
+<span class="box-label">Common mistake</span>
+<p>"The inner loop depends on <code>i</code>, so it is \(O(n)\) total." No. The sum of an arithmetic series in \(n\) terms is quadratic. Triangular loops are \(O(n^2)\).</p>
+</div>
+
+<h2 id="notation">The five notations</h2>
+
+<p>Asymptotic notation is a way of describing a function's growth while ignoring constants and lower-order terms. There are five symbols, and the exam expects you to know all of them and the differences between them.</p>
+
+<div class="tablewrap"><table>
+<thead><tr><th>Notation</th><th>Read as</th><th>Formal definition</th><th>Meaning in words</th></tr></thead>
+<tbody>
+<tr><td>\(O(f(n))\)</td><td>big-Oh</td><td>\(\exists c &gt; 0, n_0 : \forall n \ge n_0,\; T(n) \le c\,f(n)\)</td><td>Grows <em>no faster than</em> f — an upper bound</td></tr>
+<tr><td>\(\Omega(f(n))\)</td><td>big-Omega</td><td>\(\exists c &gt; 0, n_0 : \forall n \ge n_0,\; T(n) \ge c\,f(n)\)</td><td>Grows <em>at least as fast as</em> f — a lower bound</td></tr>
+<tr><td>\(\Theta(f(n))\)</td><td>big-Theta</td><td>Both of the above hold</td><td>Grows <em>exactly like</em> f — a tight bound</td></tr>
+<tr><td>\(o(f(n))\)</td><td>little-oh</td><td>\(\forall c &gt; 0, \exists n_0 : \forall n \ge n_0,\; T(n) &lt; c\,f(n)\)</td><td>Grows <em>strictly slower than</em> f</td></tr>
+<tr><td>\(\omega(f(n))\)</td><td>little-omega</td><td>\(\forall c &gt; 0, \exists n_0 : \forall n \ge n_0,\; T(n) &gt; c\,f(n)\)</td><td>Grows <em>strictly faster than</em> f</td></tr>
+</tbody></table></div>
+
+<p>The difference between \(O\) and \(o\) is the same as the difference between \(\le\) and \(<\). \(2n^2 = O(n^2)\) is true, and \(2n^2 = o(n^3)\) is true, but \(2n^2 = o(n^2)\) is false.</p>
+
+<div class="box example">
+<span class="box-label">Worked example — proving a bound from the definition</span>
+<p>Show that \(3n^2 + 5n + 2 = O(n^2)\).</p>
+<p>We must exhibit constants \(c\) and \(n_0\) such that \(3n^2 + 5n + 2 \le c\,n^2\) for all \(n \ge n_0\).</p>
+<p>For \(n \ge 1\): \(5n \le 5n^2\) and \(2 \le 2n^2\). So</p>
+\[
+3n^2 + 5n + 2 \le 3n^2 + 5n^2 + 2n^2 = 10n^2
+\]
+<p>Take \(c = 10\) and \(n_0 = 1\). The definition is satisfied, so the claim holds. ∎</p>
+<p>Note that any larger \(c\) would also work. The definition only requires <em>some</em> constants to exist, which is why we can always throw away lower-order terms.</p>
+</div>
+
+<h2 id="hierarchy">The growth hierarchy</h2>
+
+<p>From slowest-growing to fastest-growing:</p>
+
+\[
+1 \;&lt;\; \log\log n \;&lt;\; \log n \;&lt;\; \sqrt{n} \;&lt;\; n \;&lt;\; n\log n \;&lt;\; n^2 \;&lt;\; n^3 \;&lt;\; 2^n \;&lt;\; n!
+\]
+
+<p>The single most useful fact on this line: <strong>\(\log n\) grows so slowly that doubling \(n\) adds only one to it</strong>. Binary search on a billion items needs about 30 comparisons. That is why "logarithmic" is effectively "free".</p>
+
+<div class="viz" id="viz-growth">
+  <div class="viz-head">
+    <h3>Growth-rate explorer</h3>
+    <div class="viz-controls">
+      <label style="font-size:12.5px;color:var(--ink-3)">n = <output id="gr-out">10</output></label>
+      <input type="range" data-gr="n" min="1" max="60" value="10" style="width:160px" aria-label="Input size n">
+    </div>
+  </div>
+  <div class="viz-stage"></div>
+  <div class="viz-log"></div>
+</div>
+
+<script>
+(function(){
+  var r=document.getElementById('viz-growth');
+  if(!r) return;
+  var s=r.querySelector('[data-gr="n"]'), o=document.getElementById('gr-out');
+  s.addEventListener('input',function(){ o.textContent=s.value; });
+})();
+</script>
+
+<h2 id="analysis">How to analyse a piece of code</h2>
+
+<ol>
+<li><strong>Find the dominant operation.</strong> Usually the innermost statement of the deepest loop.</li>
+<li><strong>Express its execution count as a function of \(n\).</strong> Sum the loop bounds.</li>
+<li><strong>Drop constants and lower-order terms.</strong> \(3n^2 + 5n + 2\) becomes \(n^2\).</li>
+<li><strong>State the result.</strong> \(O(n^2)\).</li>
+</ol>
+
+<div class="tablewrap"><table>
+<thead><tr><th>Pattern</th><th>Cost</th><th>Why</th></tr></thead>
+<tbody>
+<tr><td>Single loop over n</td><td>\(O(n)\)</td><td>Body runs n times</td></tr>
+<tr><td>Nested loop, both to n</td><td>\(O(n^2)\)</td><td>n × n</td></tr>
+<tr><td>Triangular nested loop</td><td>\(O(n^2)\)</td><td>Sum of 1..n is n(n+1)/2</td></tr>
+<tr><td>Loop that halves the input</td><td>\(O(\log n)\)</td><td>Number of halvings to reach 1</td></tr>
+<tr><td>Three nested loops to n</td><td>\(O(n^3)\)</td><td>n × n × n</td></tr>
+<tr><td>Loop over all subsets</td><td>\(O(2^n)\)</td><td>2 choices per element</td></tr>
+<tr><td>Loop over all permutations</td><td>\(O(n!)\)</td><td>n choices, then n−1, …</td></tr>
+</tbody></table></div>
+
+<div class="box example">
+<span class="box-label">Worked example — a loop that does not look logarithmic</span>
+<div class="codeblock">
+  <div class="codeblock-header"><span class="lang">C</span><span class="file">halving.c</span><button class="copy-btn">Copy</button></div>
+<pre><code class="language-c">int i = n, steps = 0;
+while (i &gt; 1) {
+    i = i / 2;
+    steps++;
+}</code></pre>
+</div>
+<p>After \(k\) iterations, \(i = n / 2^k\). The loop stops when \(n/2^k \le 1\), that is \(k \ge \log_2 n\). So the cost is \(O(\log n)\).</p>
+<p>The base of the logarithm does not matter asymptotically: \(\log_2 n = \log_{10} n / \log_{10} 2\), and the constant \(1/\log_{10}2\) is absorbed by the \(O\).</p>
+</div>
+
+<h2 id="recurrences">Recurrences</h2>
+
+<p>Recursive algorithms need a different technique: write the cost of the problem in terms of the cost of its subproblems, then solve.</p>
+
+<div class="tablewrap"><table>
+<thead><tr><th>Recurrence</th><th>Solution</th><th>Where it appears</th></tr></thead>
+<tbody>
+<tr><td>\(T(n) = T(n/2) + 1\)</td><td>\(\Theta(\log n)\)</td><td>Binary search, halving loop</td></tr>
+<tr><td>\(T(n) = T(n-1) + 1\)</td><td>\(\Theta(n)\)</td><td>Linear recursion</td></tr>
+<tr><td>\(T(n) = 2T(n/2) + n\)</td><td>\(\Theta(n \log n)\)</td><td>Merge sort, divide and conquer</td></tr>
+<tr><td>\(T(n) = 2T(n-1) + 1\)</td><td>\(\Theta(2^n)\)</td><td>Naive subset recursion</td></tr>
+</tbody></table></div>
+
+<div class="box example">
+<span class="box-label">Worked example — solving \(T(n) = 2T(n/2) + n\) by unrolling</span>
+<p>Substitute repeatedly:</p>
+\[
+\begin{aligned}
+T(n) &amp;= 2T(n/2) + n \\
+     &amp;= 2\bigl(2T(n/4) + n/2\bigr) + n = 4T(n/4) + 2n \\
+     &amp;= 4\bigl(2T(n/8) + n/4\bigr) + 2n = 8T(n/8) + 3n
+\end{aligned}
+\]
+<p>After \(k\) steps: \(T(n) = 2^k T(n/2^k) + kn\). The recursion stops when \(n/2^k = 1\), that is \(k = \log_2 n\). Then</p>
+\[
+T(n) = n\,T(1) + n\log_2 n = \Theta(n\log n)
+\]
+</div>
+
+<h2 id="amortized">Amortised analysis: the doubling array</h2>
+
+<p>Here is a question that looks like a trick and is not. A dynamic array starts with capacity 1. Each push appends an element; when the array is full, it allocates twice the capacity and copies everything over. What is the cost of <em>one push</em>?</p>
+
+<p>The worst case is terrible: when the array is full, a single push costs \(O(n)\). But that cannot be the whole story, because it only happens occasionally. <strong>Amortised analysis</strong> averages over a sequence of operations and asks for the cost per operation in that sequence.</p>
+
+<div class="box example">
+<span class="box-label">Worked example — the doubling argument</span>
+<p>Consider \(n\) pushes. The copies happen when the array grows from 1 to 2, 2 to 4, 4 to 8, and so on. The total copying work is</p>
+\[
+1 + 2 + 4 + 8 + \cdots + n &lt; 2n
+\]
+<p>because the sum of a geometric series is less than twice its largest term. Add the \(n\) pushes themselves and the total work over the whole sequence is at most \(3n\). Dividing by \(n\) operations gives \(O(1)\) <strong>amortised</strong> per push.</p>
+</div>
+
+<p>Now change one thing — grow by a constant \(k\) instead of doubling — and the analysis collapses. Copies then happen every \(k\) pushes, and the total copying work becomes \(k + 2k + 3k + \cdots \approx n^2/2k\), which is \(O(n^2)\) overall, or \(O(n)\) amortised per push. This is exactly why your lecture spends a whole topic on the exponential growth strategy.</p>
+
+<div class="box warn">
+<span class="box-label">Exam trap</span>
+<p>Amortised \(O(1)\) does <em>not</em> mean every individual push is \(O(1)\). It means the average over a long sequence is \(O(1)\). A single push can still cost \(O(n)\). If a question asks for the worst case of one push, the answer is \(O(n)\); if it asks for the amortised cost, the answer is \(O(1)\).</p>
+</div>
+
+<h2 id="space">Space complexity</h2>
+
+<p>Time is not the only resource. Space complexity counts the extra memory an algorithm needs beyond its input — the <em>auxiliary</em> space.</p>
+
+<ul>
+<li>An in-place algorithm uses \(O(1)\) auxiliary space. Heapsort is in place; merge sort is not.</li>
+<li>Recursion uses stack space proportional to depth. A recursive DFS on a graph of \(V\) vertices uses \(O(V)\) stack in the worst case.</li>
+<li>Building an adjacency list for a graph uses \(O(V + E)\); an adjacency matrix uses \(O(V^2)\).</li>
+</ul>
+
+<h2 id="code">C and Python implementations</h2>
+
+<p>The same counting exercise in both languages. Note that Python hides the loop overhead inside the interpreter, so the constants differ wildly — but the growth rate does not.</p>
+
+<div class="codeblock">
+  <div class="codeblock-header"><span class="lang">C</span><span class="file">complexity_demo.c</span><button class="copy-btn">Copy</button></div>
+<pre><code class="language-c">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+
+/* O(n) - one pass over the array */
+long sum_array(const int *a, int n) {
+    long total = 0;
+    for (int i = 0; i &lt; n; i++)      /* n iterations */
+        total += a[i];
+    return total;
+}
+
+/* O(n^2) - every pair, i &lt; j only */
+long count_pairs(const int *a, int n) {
+    long pairs = 0;
+    for (int i = 0; i &lt; n; i++)
+        for (int j = i + 1; j &lt; n; j++)   /* triangular loop */
+            if (a[i] + a[j] == 0) pairs++;
+    return pairs;
+}
+
+/* O(log n) - halve until 1 */
+int halvings(int n) {
+    int steps = 0;
+    while (n &gt; 1) { n /= 2; steps++; }
+    return steps;
+}
+
+int main(void) {
+    int n = 8;
+    int a[] = {1, -1, 2, -2, 3, -3, 4, -4};
+    printf("sum        = %ld\n", sum_array(a, n));
+    printf("zero pairs = %ld\n", count_pairs(a, n));
+    printf("halvings   = %d\n", halvings(n));
+    return 0;
+}
+/* output:
+   sum        = 0
+   zero pairs = 4
+   halvings   = 3            */</code></pre>
+</div>
+
+<div class="codeblock">
+  <div class="codeblock-header"><span class="lang">Python</span><span class="file">complexity_demo.py</span><button class="copy-btn">Copy</button></div>
+<pre><code class="language-python">def sum_list(a):
+    """O(n) - one pass."""
+    total = 0
+    for x in a:
+        total += x
+    return total
+
+
+def count_pairs(a):
+    """O(n^2) - triangular double loop."""
+    pairs = 0
+    n = len(a)
+    for i in range(n):
+        for j in range(i + 1, n):
+            if a[i] + a[j] == 0:
+                pairs += 1
+    return pairs
+
+
+def halvings(n):
+    """O(log n) - halve until 1."""
+    steps = 0
+    while n &gt; 1:
+        n //= 2
+        steps += 1
+    return steps
+
+
+if __name__ == "__main__":
+    a = [1, -1, 2, -2, 3, -3, 4, -4]
+    print("sum        =", sum_list(a))
+    print("zero pairs =", count_pairs(a))
+    print("halvings   =", halvings(8))</code></pre>
+</div>
+
+<h3>What differs between the two</h3>
+<ul>
+<li><strong>Speed of the constant.</strong> The C loop is perhaps 50 times faster per iteration. That changes the constant factor, never the growth rate.</li>
+<li><strong>Overflow.</strong> In C, <code>long</code> overflows silently on large sums. Python integers grow arbitrarily, so <code>sum_list</code> is correct for any size — at the cost of memory.</li>
+<li><strong>Iteration cost.</strong> Python's <code>for x in a</code> is implemented in C internally and is fast; a manual index loop is slower. In C, the index loop is the idiomatic form.</li>
+</ul>
+
+<h2 id="mistakes">Common mistakes</h2>
+
+<ol>
+<li><strong>Writing \(O(2n)\) or \(O(n + 5)\).</strong> Constants are absorbed: these are \(O(n)\).</li>
+<li><strong>Keeping lower-order terms.</strong> \(O(n^2 + n)\) is \(O(n^2)\).</li>
+<li><strong>Assuming nested loops are always \(O(n^2)\).</strong> Only if both bounds are \(n\). A loop over the bits of a number is \(O(\log n)\) per number.</li>
+<li><strong>Confusing best, average and worst case.</strong> Linear search is \(O(1)\) best, \(O(n)\) worst. State which you mean.</li>
+<li><strong>Treating \(O\) as "equals".</strong> \(f(n) = O(g)\) is really \(f(n) \in O(g)\). The equality is a convention.</li>
+</ol>
+
+<h2 id="check">Check your understanding</h2>
+
+<div class="quiz">
+  <div class="qtext">What is the time complexity of this loop?<br><code>for (i = 1; i &lt; n; i *= 2) sum++;</code></div>
+  <div class="opts">
+    <button class="opt">O(n)</button>
+    <button class="opt" data-correct>O(log n)</button>
+    <button class="opt">O(n log n)</button>
+    <button class="opt">O(1)</button>
+  </div>
+  <div class="fb">The counter doubles each iteration: 1, 2, 4, 8, … It exceeds <em>n</em> after ⌈log₂ n⌉ steps, so the loop body runs O(log n) times. Multiplying the counter instead of incrementing it is what makes it logarithmic.</div>
+</div>
+
+<div class="quiz">
+  <div class="qtext">Is it true that \(5n + 3 = \Theta(n)\)?</div>
+  <div class="opts">
+    <button class="opt" data-correct>Yes — it is bounded both above and below by a constant multiple of n</button>
+    <button class="opt">No — it is only O(n), not Θ(n)</button>
+    <button class="opt">No — it is o(n)</button>
+    <button class="opt">Only for large constants</button>
+  </div>
+  <div class="fb">Upper bound: \(5n + 3 \le 8n\) for \(n \ge 1\). Lower bound: \(5n + 3 \ge 5n\). Both hold, so Θ(n). A function is Θ(g) exactly when it is both O(g) and Ω(g).</div>
+</div>
+
+<div class="quiz">
+  <div class="qtext">An array that doubles when full is pushed to n times. What is the amortised cost per push?</div>
+  <div class="opts">
+    <button class="opt">O(n) — because one push may copy everything</button>
+    <button class="opt">O(log n) — because there are log n resizes</button>
+    <button class="opt" data-correct>O(1) — because the total copying work is bounded by 2n</button>
+    <button class="opt">O(n log n)</button>
+  </div>
+  <div class="fb">The copies total 1 + 2 + 4 + … + n &lt; 2n, so over n pushes the work is O(n) and the average is O(1). The worst case of a <em>single</em> push is still O(n) — that is the distinction amortised analysis draws.</div>
+</div>
