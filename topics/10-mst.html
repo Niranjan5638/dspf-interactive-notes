@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>10 · Minimum Spanning Trees · DSPF</title>
+<meta name="description" content="Kruskal, Prim and the cut property that makes both of them correct.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;0,6..72,700;1,6..72,400&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/style.css">
+<script>
+  window.MathJax = {
+    tex: { inlineMath: [['\\(', '\\)']], displayMath: [['\\[', '\\]']] },
+    options: { skipHtmlTags: ['script','noscript','style','textarea','pre','code'] }
+  };
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-c.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-python.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism.min.css">
+</head>
+<body data-page="topic-10-mst">
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="../index.html">DSPF<span>.</span>Notes</a>
+    <nav class="topnav">
+      <a href="../index.html">Home</a>
+      <a href="../topics/01-complexity.html">Chapters</a>
+      <a href="../visualizers.html">Visualizers</a>
+      <a href="../practice.html">Practice</a>
+      <a href="../glossary.html">Glossary</a>
+    </nav>
+    <div class="searchbox">
+      <input id="search-input" type="search" placeholder="Search topics…  ( / )" autocomplete="off" aria-label="Search the textbook">
+      <div class="searchresults" id="search-results"></div>
+    </div>
+  </div>
+</header>
+<div class="shell">
+<nav class="sidebar" aria-label="Chapter navigation">
+<div class="side-group">Chapters</div>
+<a href="../topics/01-complexity.html" data-topic-id="topic-01-complexity">01 · Measuring Cost: Complexity and Asymptotic Notation</a>
+<a href="../topics/02-stacks-queues.html" data-topic-id="topic-02-stacks-queues">02 · Stacks, Queues and Linked Lists</a>
+<a href="../topics/03-trees.html" data-topic-id="topic-03-trees">03 · Trees and Traversals</a>
+<a href="../topics/04-bst.html" data-topic-id="topic-04-bst">04 · Binary Search Trees</a>
+<a href="../topics/05-avl.html" data-topic-id="topic-05-avl">05 · AVL Trees and Rotations</a>
+<a href="../topics/06-heaps.html" data-topic-id="topic-06-heaps">06 · Heaps and Heapsort</a>
+<a href="../topics/07-graphs.html" data-topic-id="topic-07-graphs">07 · Graphs: Terminology and Representation</a>
+<a href="../topics/08-bfs.html" data-topic-id="topic-08-bfs">08 · Breadth-First Search</a>
+<a href="../topics/09-dfs.html" data-topic-id="topic-09-dfs">09 · Depth-First Search</a>
+<a href="../topics/10-mst.html" data-topic-id="topic-10-mst" class="active">10 · Minimum Spanning Trees</a>
+<div class="side-group">Tools</div>
+<a href="../visualizers.html">Interactive Visualizers</a>
+<a href="../practice.html">Practice and Examination Questions</a>
+<a href="../glossary.html">Glossary</a>
+</nav>
+<main>
+<div class="kicker">Chapter 10</div>
+<h1>Minimum Spanning Trees</h1>
+<p class="lede">Kruskal, Prim and the cut property that makes both of them correct.</p>
+<h2 id="why">Connecting everything as cheaply as possible</h2>
+
+<p>You have a set of cities and a cost for every possible road between them. You must connect all the cities, using only some of the roads, at minimum total cost. That is the minimum spanning tree problem, and it is the last structure in the course because it needs both the graph representation of chapter 7 and the traversal ideas of chapters 8 and 9.</p>
+
+<div class="box def">
+<span class="box-label">Definition — minimum spanning tree</span>
+<p>For a connected weighted undirected graph \(G = (V, E)\), a <strong>spanning tree</strong> is a subgraph that is a tree and contains all \(V\) vertices. A <strong>minimum spanning tree</strong> (MST) is a spanning tree of minimum total edge weight.</p>
+</div>
+
+<p>A spanning tree on \(V\) vertices always has exactly \(V - 1\) edges. If a graph has \(m\) distinct edge weights, its MST is unique; with ties, several MSTs of equal weight may exist.</p>
+
+<h2 id="cut">The cut property — why both algorithms work</h2>
+
+<div class="box def">
+<span class="box-label">Definition — cut and the cut property</span>
+<p>A <strong>cut</strong> partitions the vertices into two non-empty sets. An edge <strong>crosses</strong> the cut if its endpoints are on opposite sides. The <strong>cut property</strong> states: for any cut, the lightest edge crossing it belongs to some MST.</p>
+</div>
+
+<div class="box example">
+<span class="box-label">Proof of the cut property</span>
+<p>Let \(e\) be the lightest edge crossing cut \((S, V-S)\), and let \(T\) be an MST that does not contain \(e\). Adding \(e\) to \(T\) creates a cycle, and that cycle must cross the cut an even number of times, so it contains another crossing edge \(f\). By the choice of \(e\), \(w(e) \le w(f)\).</p>
+<p>Then \(T - f + e\) is still a spanning tree (removing a cycle edge keeps it connected and acyclic) with weight no greater than \(T\). Since \(T\) was minimum, so is the new tree, and it contains \(e\). ∎</p>
+</div>
+
+<p>Both algorithms below are repeated applications of that fact. Kruskal takes the globally lightest edge that does not create a cycle; Prim grows a tree by repeatedly taking the lightest edge leaving it.</p>
+
+<h2 id="kruskal">Kruskal's algorithm</h2>
+
+<p>Sort all edges by weight. Scan in increasing order, adding each edge that does not create a cycle, until \(V-1\) edges are accepted. Cycle testing uses <strong>union-find</strong> (disjoint sets), which gives near-constant amortised time per operation.</p>
+
+<div class="codeblock">
+  <div class="codeblock-header"><span class="lang">Pseudocode</span><span class="file">Kruskal</span></div>
+<pre><code class="language-c">KRUSKAL(G):
+    result = empty
+    for each vertex v: MAKE-SET(v)
+    sort edges by weight ascending
+    for each edge (u, v) in sorted order:
+        if FIND(u) != FIND(v):        # different components
+            result.add((u, v))
+            UNION(u, v)
+            if |result| == |V| - 1: break
+    return result</code></pre>
+</div>
+
+<p><strong>Complexity:</strong> \(O(E \log E)\) for the sort, which dominates. Union-find with path compression and union by rank is \(O(E \alpha(V))\), effectively linear.</p>
+
+<h2 id="prim">Prim's algorithm</h2>
+
+<p>Start from any vertex. Repeatedly add the lightest edge connecting the current tree to a vertex outside it. A priority queue of crossing edges makes each step \(O(\log V)\).</p>
+
+<div class="codeblock">
+  <div class="codeblock-header"><span class="lang">Pseudocode</span><span class="file">Prim</span></div>
+<pre><code class="language-c">PRIM(G, start):
+    for each vertex v: key[v] = infinity; inTree[v] = false
+    key[start] = 0; parent[start] = nil
+    PQ = all vertices keyed by key
+    while PQ not empty:
+        u = extract-min(PQ)
+        inTree[u] = true
+        for each neighbour v of u with weight w:
+            if not inTree[v] and w < key[v]:
+                key[v] = w; parent[v] = u
+                decrease-key(PQ, v, w)</code></pre>
+</div>
+
+<p><strong>Complexity:</strong> \(O(E \log V)\) with a binary heap, \(O(E + V \log V)\) with a Fibonacci heap.</p>
+
+<div class="tablewrap"><table>
+<thead><tr><th></th><th>Kruskal</th><th>Prim</th></tr></thead>
+<tbody>
+<tr><td>Idea</td><td>Sort edges, add the cheapest that does not cycle</td><td>Grow one tree, always add the cheapest edge leaving it</td></tr>
+<tr><td>Data structure</td><td>Union-find</td><td>Priority queue</td></tr>
+<tr><td>Complexity</td><td>\(O(E \log E)\)</td><td>\(O(E \log V)\)</td></tr>
+<tr><td>Better when</td><td>The graph is sparse, or edges already sorted</td><td>The graph is dense</td></tr>
+<tr><td>Produces</td><td>A forest joined as edges are accepted</td><td>A single tree growing outward</td></tr>
+</tbody></table></div>
+
+<h2 id="trace">The same graph by both methods</h2>
+
+<div class="box example">
+<span class="box-label">Worked example</span>
+<p>Vertices A–F. Edges: A–B 4, A–C 2, B–C 1, B–D 5, C–D 8, C–E 10, D–E 2, D–F 6, E–F 3.</p>
+<p><strong>Kruskal</strong>, after sorting: BC 1, AC 2, DE 2, EF 3, AB 4, BD 5, DF 6, CD 8, CE 10.</p>
+<div class="tablewrap"><table>
+<thead><tr><th>Edge</th><th>Weight</th><th>Decision</th><th>Components</th></tr></thead>
+<tbody>
+<tr><td>B–C</td><td>1</td><td>accept</td><td>{B,C}</td></tr>
+<tr><td>A–C</td><td>2</td><td>accept</td><td>{A,B,C}</td></tr>
+<tr><td>D–E</td><td>2</td><td>accept</td><td>{A,B,C} {D,E}</td></tr>
+<tr><td>E–F</td><td>3</td><td>accept</td><td>{A,B,C} {D,E,F}</td></tr>
+<tr><td>A–B</td><td>4</td><td><strong>reject</strong> — cycle A-B-C-A</td><td>{A,B,C} {D,E,F}</td></tr>
+<tr><td>B–D</td><td>5</td><td>accept — joins the two</td><td>{A,B,C,D,E,F}</td></tr>
+</tbody></table></div>
+<p>Five edges for six vertices: stop. <strong>Total = 1 + 2 + 2 + 3 + 5 = 13.</strong></p>
+<p><strong>Prim</strong> from A:</p>
+<div class="tablewrap"><table>
+<thead><tr><th>Tree</th><th>Cheapest crossing edge</th><th>Added</th></tr></thead>
+<tbody>
+<tr><td>{A}</td><td>A–C, cost 2</td><td>C</td></tr>
+<tr><td>{A,C}</td><td>C–B, cost 1 (A–B costs 4)</td><td>B</td></tr>
+<tr><td>{A,B,C}</td><td>B–D, cost 5</td><td>D</td></tr>
+<tr><td>{A,B,C,D}</td><td>D–E, cost 2</td><td>E</td></tr>
+<tr><td>{A,B,C,D,E}</td><td>E–F, cost 3</td><td>F</td></tr>
+</tbody></table></div>
+<p><strong>Total = 2 + 1 + 5 + 2 + 3 = 13</strong>, the same edge set {BC, AC, BD, DE, EF}.</p>
+</div>
+
+<h2 id="code">C implementation</h2>
+
+<div class="codeblock">
+  <div class="codeblock-header"><span class="lang">C</span><span class="file">kruskal.c</span><button class="copy-btn">Copy</button></div>
+<pre><code class="language-c">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+
+#define MAXV 100
+#define MAXE 1000
+
+typedef struct { int u, v, w; } Edge;
+
+static int cmp(const void *a, const void *b) {
+    return ((const Edge *)a)-&gt;w - ((const Edge *)b)-&gt;w;
+}
+
+/* ---- union-find with path compression + union by rank ---- */
+int parent[MAXV], rank_[MAXV];
+
+void uf_init(int n) {
+    for (int i = 0; i &lt; n; i++) { parent[i] = i; rank_[i] = 0; }
+}
+
+int find(int x) {
+    while (parent[x] != x) {
+        parent[x] = parent[parent[x]];   /* path halving */
+        x = parent[x];
+    }
+    return x;
+}
+
+int unite(int a, int b) {
+    a = find(a); b = find(b);
+    if (a == b) return 0;                /* already together: would cycle */
+    if (rank_[a] &lt; rank_[b]) { int t = a; a = b; b = t; }
+    parent[b] = a;
+    if (rank_[a] == rank_[b]) rank_[a]++;
+    return 1;
+}
+
+int main(void) {
+    int n = 6;
+    Edge e[] = {{0,1,4},{0,2,2},{1,2,1},{1,3,5},{2,3,8},{2,4,10},{3,4,2},{3,5,6},{4,5,3}};
+    int m = sizeof e / sizeof e[0];
+
+    qsort(e, m, sizeof(Edge), cmp);
+    uf_init(n);
+
+    int total = 0, used = 0;
+    for (int i = 0; i &lt; m &amp;&amp; used &lt; n - 1; i++) {
+        if (unite(e[i].u, e[i].v)) {
+            printf("add %d-%d (weight %d)\n", e[i].u, e[i].v, e[i].w);
+            total += e[i].w;
+            used++;
+        } else {
+            printf("skip %d-%d (weight %d) - would form a cycle\n", e[i].u, e[i].v, e[i].w);
+        }
+    }
+    printf("MST weight = %d over %d edges\n", total, used);
+    return 0;
+}
+/* output ends with:
+   MST weight = 13 over 5 edges   */</code></pre>
+</div>
+
+<div class="codeblock">
+  <div class="codeblock-header"><span class="lang">Python</span><span class="file">mst.py</span><button class="copy-btn">Copy</button></div>
+<pre><code class="language-python">import heapq
+
+
+class UnionFind:
+    def __init__(self, n):
+        self.parent = list(range(n))
+        self.rank = [0] * n
+
+    def find(self, x):
+        while self.parent[x] != x:
+            self.parent[x] = self.parent[self.parent[x]]   # path halving
+            x = self.parent[x]
+        return x
+
+    def union(self, a, b):
+        ra, rb = self.find(a), self.find(b)
+        if ra == rb:
+            return False
+        if self.rank[ra] < self.rank[rb]:
+            ra, rb = rb, ra
+        self.parent[rb] = ra
+        if self.rank[ra] == self.rank[rb]:
+            self.rank[ra] += 1
+        return True
+
+
+def kruskal(n, edges):
+    """edges: list of (weight, u, v). Returns (total, chosen)."""
+    uf = UnionFind(n)
+    total, chosen = 0, []
+    for w, u, v in sorted(edges):
+        if uf.union(u, v):
+            chosen.append((u, v, w))
+            total += w
+            if len(chosen) == n - 1:
+                break
+    return total, chosen
+
+
+def prim(n, adj, start=0):
+    """adj: {u: [(v, w), ...]}. Returns (total, chosen)."""
+    in_tree = [False] * n
+    total, chosen = 0, []
+    pq = [(0, start, None)]
+    while pq:
+        w, u, p = heapq.heappop(pq)
+        if in_tree[u]:
+            continue
+        in_tree[u] = True
+        total += w
+        if p is not None:
+            chosen.append((p, u, w))
+        for v, wt in adj.get(u, ()):
+            if not in_tree[v]:
+                heapq.heappush(pq, (wt, v, u))
+    return total, chosen
+
+
+if __name__ == "__main__":
+    edges = [(4,0,1),(2,0,2),(1,1,2),(5,1,3),(8,2,3),(10,2,4),(2,3,4),(6,3,5),(3,4,5)]
+    print(kruskal(6, edges))       # (13, [...])
+    adj = {}
+    for w, u, v in edges:
+        adj.setdefault(u, []).append((v, w))
+        adj.setdefault(v, []).append((u, w))
+    print(prim(6, adj))            # (13, [...])</code></pre>
+</div>
+
+<h2 id="mistakes">Common mistakes</h2>
+
+<ol>
+<li><strong>Accepting a cheap edge that closes a cycle.</strong> In Kruskal the cycle test <em>is</em> the algorithm; skipping it produces a spanning subgraph, not a tree.</li>
+<li><strong>Stopping early.</strong> You need exactly \(V-1\) edges; fewer means the graph is disconnected.</li>
+<li><strong>Assuming the MST is unique.</strong> With tied weights several distinct trees can share the minimum total.</li>
+<li><strong>Using Prim on a disconnected graph</strong> and reporting a spanning tree. It returns a spanning tree of one component only.</li>
+<li><strong>Confusing MST with shortest paths.</strong> The MST minimises total edge weight; Dijkstra minimises the distance from one source. The MST can contain a long detour to avoid an expensive edge.</li>
+</ol>
+
+<h2 id="check">Check your understanding</h2>
+
+<div class="quiz">
+  <div class="qtext">A connected graph has 9 vertices. How many edges are in any spanning tree of it?</div>
+  <div class="opts">
+    <button class="opt">9</button>
+    <button class="opt" data-correct>8</button>
+    <button class="opt">Depends on the weights</button>
+    <button class="opt">36</button>
+  </div>
+  <div class="fb">Every spanning tree on V vertices has exactly V − 1 edges, whatever the weights. That is a consequence of being connected and acyclic.</div>
+</div>
+
+<div class="quiz">
+  <div class="qtext">Kruskal's algorithm rejects the edge A–B of weight 4. Why?</div>
+  <div class="opts">
+    <button class="opt">Because 4 is greater than the average weight</button>
+    <button class="opt" data-correct>Because A and B are already in the same component, so adding it would create a cycle</button>
+    <button class="opt">Because a lighter edge to B exists</button>
+    <button class="opt">Because Kruskal only accepts V edges</button>
+  </div>
+  <div class="fb">Kruskal's only rejection criterion is the cycle test, performed by union-find. At that point A and B are both already connected through C (via A–C and C–B), so find(A) == find(B) and the edge is skipped — even though it is cheap.</div>
+</div>
+<nav class="pager" aria-label="Chapter navigation">
+<a href="../topics/09-dfs.html"><span class="dir">← Previous</span><span class="ttl">09 · Depth-First Search</span></a>
+<a class="next" href="../practice.html"><span class="dir">Next →</span><span class="ttl">Practice and examination questions</span></a>
+</nav>
+<footer style="margin-top:56px;padding-top:22px;border-top:1px solid var(--rule);font-size:13px;color:var(--ink-3)">
+  <p style="margin:0 0 6px"><strong style="color:var(--ink-2)">Data Structures and Programming Fundamentals</strong> — an interactive textbook built from the CS213/293 lecture series, with Cormen et al. and Balagurusamy as references.</p>
+  <p style="margin:0">Progress is saved in this browser only. <a href="../glossary.html">Glossary</a> · <a href="../practice.html">Practice</a> · <a href="../visualizers.html">Visualizers</a></p>
+</footer>
+</main>
+</div>
+<script>window.DSPF_SEARCH = [{"title": "01 · Measuring Cost: Complexity and Asymptotic Notation", "topic": "Chapter", "url": "topics/01-complexity.html", "keywords": "Big-O, asymptotic, growth rate, amortized, recurrence, complexity Why we compare algorithms by growth, and how to read O, Omega, Theta, o and omega."}, {"title": "02 · Stacks, Queues and Linked Lists", "topic": "Chapter", "url": "topics/02-stacks-queues.html", "keywords": "stack, queue, linked list, circular buffer, deque, LIFO, FIFO LIFO and FIFO containers, how they are built on arrays and pointers, and why the circular buffer exists."}, {"title": "03 · Trees and Traversals", "topic": "Chapter", "url": "topics/03-trees.html", "keywords": "tree, binary tree, preorder, inorder, postorder, level order, traversal Tree terminology, representations, and the four ways to walk a binary tree."}, {"title": "04 · Binary Search Trees", "topic": "Chapter", "url": "topics/04-bst.html", "keywords": "BST, binary search tree, insert, delete, successor, height Ordering a tree so search becomes logarithmic - and the degenerate case that breaks it."}, {"title": "05 · AVL Trees and Rotations", "topic": "Chapter", "url": "topics/05-avl.html", "keywords": "AVL, rotation, balance factor, LL, RR, LR, RL, height bound Restoring the balance invariant with four rotation cases, and why height is guaranteed logarithmic."}, {"title": "06 · Heaps and Heapsort", "topic": "Chapter", "url": "topics/06-heaps.html", "keywords": "heap, priority queue, heapify, build-heap, heapsort, sift Partial sorting in an array: priority queues, heapify, build-heap and heapsort."}, {"title": "07 · Graphs: Terminology and Representation", "topic": "Chapter", "url": "topics/07-graphs.html", "keywords": "graph, adjacency matrix, adjacency list, directed, degree, cycle Vertices, edges, paths and cycles, and the two ways to store a graph."}, {"title": "08 · Breadth-First Search", "topic": "Chapter", "url": "topics/08-bfs.html", "keywords": "BFS, breadth-first, queue, shortest path, connected components, bipartite, diameter Ring-by-ring exploration with a queue, shortest unweighted paths, components and bipartiteness."}, {"title": "09 · Depth-First Search", "topic": "Chapter", "url": "topics/09-dfs.html", "keywords": "DFS, depth-first, stack, topological sort, cycle, strongly connected, finish time Going deep with a stack: discovery and finish times, cycle detection and topological sort."}, {"title": "10 · Minimum Spanning Trees", "topic": "Chapter", "url": "topics/10-mst.html", "keywords": "MST, minimum spanning tree, Kruskal, Prim, union-find, cut property, greedy Kruskal, Prim and the cut property that makes both of them correct."}, {"title": "Interactive Visualizers", "topic": "Tool", "url": "visualizers.html", "keywords": "Drive the algorithms yourself: stack, queue, BST, heap, BFS/DFS and growth rates."}, {"title": "Practice and Examination Questions", "topic": "Tool", "url": "practice.html", "keywords": "Graded questions with full worked solutions, from recall to exam-hard."}, {"title": "Glossary", "topic": "Tool", "url": "glossary.html", "keywords": "Every term used in the course, defined in one line."}, {"title": "Why we need a way to measure cost", "topic": "Ch 01", "url": "topics/01-complexity.html#why", "keywords": "Why we need a way to measure cost"}, {"title": "Counting operations", "topic": "Ch 01", "url": "topics/01-complexity.html#counting", "keywords": "Counting operations"}, {"title": "The five notations", "topic": "Ch 01", "url": "topics/01-complexity.html#notation", "keywords": "The five notations"}, {"title": "The growth hierarchy", "topic": "Ch 01", "url": "topics/01-complexity.html#hierarchy", "keywords": "The growth hierarchy"}, {"title": "How to analyse a piece of code", "topic": "Ch 01", "url": "topics/01-complexity.html#analysis", "keywords": "How to analyse a piece of code"}, {"title": "Recurrences", "topic": "Ch 01", "url": "topics/01-complexity.html#recurrences", "keywords": "Recurrences"}, {"title": "Amortised analysis: the doubling array", "topic": "Ch 01", "url": "topics/01-complexity.html#amortized", "keywords": "Amortised analysis: the doubling array"}, {"title": "Space complexity", "topic": "Ch 01", "url": "topics/01-complexity.html#space", "keywords": "Space complexity"}, {"title": "C and Python implementations", "topic": "Ch 01", "url": "topics/01-complexity.html#code", "keywords": "C and Python implementations"}, {"title": "Common mistakes", "topic": "Ch 01", "url": "topics/01-complexity.html#mistakes", "keywords": "Common mistakes"}, {"title": "Check your understanding", "topic": "Ch 01", "url": "topics/01-complexity.html#check", "keywords": "Check your understanding"}, {"title": "Two ways to decide who goes next", "topic": "Ch 02", "url": "topics/02-stacks-queues.html#why", "keywords": "Two ways to decide who goes next"}, {"title": "Abstract data type versus implementation", "topic": "Ch 02", "url": "topics/02-stacks-queues.html#adt", "keywords": "Abstract data type versus implementation"}, {"title": "Implementations and their costs", "topic": "Ch 02", "url": "topics/02-stacks-queues.html#implementations", "keywords": "Implementations and their costs"}, {"title": "Linked lists", "topic": "Ch 02", "url": "topics/02-stacks-queues.html#linked", "keywords": "Linked lists"}, {"title": "C implementation", "topic": "Ch 02", "url": "topics/02-stacks-queues.html#code", "keywords": "C implementation"}, {"title": "Python implementation", "topic": "Ch 02", "url": "topics/02-stacks-queues.html#python", "keywords": "Python implementation"}, {"title": "Common mistakes", "topic": "Ch 02", "url": "topics/02-stacks-queues.html#mistakes", "keywords": "Common mistakes"}, {"title": "Check your understanding", "topic": "Ch 02", "url": "topics/02-stacks-queues.html#check", "keywords": "Check your understanding"}, {"title": "From a line to a hierarchy", "topic": "Ch 03", "url": "topics/03-trees.html#why", "keywords": "From a line to a hierarchy"}, {"title": "Terminology", "topic": "Ch 03", "url": "topics/03-trees.html#terminology", "keywords": "Terminology"}, {"title": "Counting facts worth memorising", "topic": "Ch 03", "url": "topics/03-trees.html#counting", "keywords": "Counting facts worth memorising"}, {"title": "Representing a binary tree", "topic": "Ch 03", "url": "topics/03-trees.html#representation", "keywords": "Representing a binary tree"}, {"title": "The four traversals", "topic": "Ch 03", "url": "topics/03-trees.html#traversals", "keywords": "The four traversals"}, {"title": "C implementation", "topic": "Ch 03", "url": "topics/03-trees.html#code", "keywords": "C implementation"}, {"title": "Python implementation", "topic": "Ch 03", "url": "topics/03-trees.html#python", "keywords": "Python implementation"}, {"title": "Complexity summary", "topic": "Ch 03", "url": "topics/03-trees.html#complexity", "keywords": "Complexity summary"}, {"title": "Check your understanding", "topic": "Ch 03", "url": "topics/03-trees.html#check", "keywords": "Check your understanding"}, {"title": "Adding order to a tree", "topic": "Ch 04", "url": "topics/04-bst.html#why", "keywords": "Adding order to a tree"}, {"title": "The operations", "topic": "Ch 04", "url": "topics/04-bst.html#operations", "keywords": "The operations"}, {"title": "Deletion, the three cases", "topic": "Ch 04", "url": "topics/04-bst.html#delete", "keywords": "Deletion, the three cases"}, {"title": "The successor, and why it works", "topic": "Ch 04", "url": "topics/04-bst.html#successor", "keywords": "The successor, and why it works"}, {"title": "The degenerate case", "topic": "Ch 04", "url": "topics/04-bst.html#degenerate", "keywords": "The degenerate case"}, {"title": "C implementation", "topic": "Ch 04", "url": "topics/04-bst.html#code", "keywords": "C implementation"}, {"title": "Python implementation", "topic": "Ch 04", "url": "topics/04-bst.html#python", "keywords": "Python implementation"}, {"title": "Common mistakes", "topic": "Ch 04", "url": "topics/04-bst.html#mistakes", "keywords": "Common mistakes"}, {"title": "Check your understanding", "topic": "Ch 04", "url": "topics/04-bst.html#check", "keywords": "Check your understanding"}, {"title": "Fixing the degenerate case", "topic": "Ch 05", "url": "topics/05-avl.html#why", "keywords": "Fixing the degenerate case"}, {"title": "The height bound, and why it matters", "topic": "Ch 05", "url": "topics/05-avl.html#heightbound", "keywords": "The height bound, and why it matters"}, {"title": "The four rotation cases", "topic": "Ch 05", "url": "topics/05-avl.html#rotations", "keywords": "The four rotation cases"}, {"title": "Insertion versus deletion", "topic": "Ch 05", "url": "topics/05-avl.html#insertdelete", "keywords": "Insertion versus deletion"}, {"title": "C implementation", "topic": "Ch 05", "url": "topics/05-avl.html#code", "keywords": "C implementation"}, {"title": "Complexity", "topic": "Ch 05", "url": "topics/05-avl.html#complexity", "keywords": "Complexity"}, {"title": "Check your understanding", "topic": "Ch 05", "url": "topics/05-avl.html#check", "keywords": "Check your understanding"}, {"title": "Giving up order to keep one fact", "topic": "Ch 06", "url": "topics/06-heaps.html#why", "keywords": "Giving up order to keep one fact"}, {"title": "The heap property and the array layout", "topic": "Ch 06", "url": "topics/06-heaps.html#property", "keywords": "The heap property and the array layout"}, {"title": "Operations", "topic": "Ch 06", "url": "topics/06-heaps.html#operations", "keywords": "Operations"}, {"title": "Worked trace — build-heap", "topic": "Ch 06", "url": "topics/06-heaps.html#trace", "keywords": "Worked trace — build-heap"}, {"title": "Insert and delete-max traces", "topic": "Ch 06", "url": "topics/06-heaps.html#insertdelete", "keywords": "Insert and delete-max traces"}, {"title": "Heapsort", "topic": "Ch 06", "url": "topics/06-heaps.html#heapsort", "keywords": "Heapsort"}, {"title": "Common mistakes", "topic": "Ch 06", "url": "topics/06-heaps.html#mistakes", "keywords": "Common mistakes"}, {"title": "Check your understanding", "topic": "Ch 06", "url": "topics/06-heaps.html#check", "keywords": "Check your understanding"}, {"title": "Dropping the no-cycles rule", "topic": "Ch 07", "url": "topics/07-graphs.html#why", "keywords": "Dropping the no-cycles rule"}, {"title": "Terminology", "topic": "Ch 07", "url": "topics/07-graphs.html#terminology", "keywords": "Terminology"}, {"title": "The two representations", "topic": "Ch 07", "url": "topics/07-graphs.html#representation", "keywords": "The two representations"}, {"title": "C implementation", "topic": "Ch 07", "url": "topics/07-graphs.html#code", "keywords": "C implementation"}, {"title": "Check your understanding", "topic": "Ch 07", "url": "topics/07-graphs.html#check", "keywords": "Check your understanding"}, {"title": "Exploring in rings", "topic": "Ch 08", "url": "topics/08-bfs.html#why", "keywords": "Exploring in rings"}, {"title": "Why BFS finds shortest paths", "topic": "Ch 08", "url": "topics/08-bfs.html#why-shortest", "keywords": "Why BFS finds shortest paths"}, {"title": "Worked trace", "topic": "Ch 08", "url": "topics/08-bfs.html#trace", "keywords": "Worked trace"}, {"title": "What BFS is used for", "topic": "Ch 08", "url": "topics/08-bfs.html#applications", "keywords": "What BFS is used for"}, {"title": "C and Python", "topic": "Ch 08", "url": "topics/08-bfs.html#code", "keywords": "C and Python"}, {"title": "Check your understanding", "topic": "Ch 08", "url": "topics/08-bfs.html#check", "keywords": "Check your understanding"}, {"title": "Going as deep as possible", "topic": "Ch 09", "url": "topics/09-dfs.html#why", "keywords": "Going as deep as possible"}, {"title": "Edge classification", "topic": "Ch 09", "url": "topics/09-dfs.html#edgeclass", "keywords": "Edge classification"}, {"title": "What DFS is used for", "topic": "Ch 09", "url": "topics/09-dfs.html#applications", "keywords": "What DFS is used for"}, {"title": "C and Python", "topic": "Ch 09", "url": "topics/09-dfs.html#code", "keywords": "C and Python"}, {"title": "Check your understanding", "topic": "Ch 09", "url": "topics/09-dfs.html#check", "keywords": "Check your understanding"}, {"title": "Connecting everything as cheaply as possible", "topic": "Ch 10", "url": "topics/10-mst.html#why", "keywords": "Connecting everything as cheaply as possible"}, {"title": "The cut property — why both algorithms work", "topic": "Ch 10", "url": "topics/10-mst.html#cut", "keywords": "The cut property — why both algorithms work"}, {"title": "Kruskal's algorithm", "topic": "Ch 10", "url": "topics/10-mst.html#kruskal", "keywords": "Kruskal's algorithm"}, {"title": "Prim's algorithm", "topic": "Ch 10", "url": "topics/10-mst.html#prim", "keywords": "Prim's algorithm"}, {"title": "The same graph by both methods", "topic": "Ch 10", "url": "topics/10-mst.html#trace", "keywords": "The same graph by both methods"}, {"title": "C implementation", "topic": "Ch 10", "url": "topics/10-mst.html#code", "keywords": "C implementation"}, {"title": "Common mistakes", "topic": "Ch 10", "url": "topics/10-mst.html#mistakes", "keywords": "Common mistakes"}, {"title": "Check your understanding", "topic": "Ch 10", "url": "topics/10-mst.html#check", "keywords": "Check your understanding"}];</script>
+<script src="../assets/app.js"></script>
+</body>
+</html>
