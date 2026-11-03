@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>06 · Heaps and Heapsort · DSPF</title>
+<meta name="description" content="Partial sorting in an array: priority queues, heapify, build-heap and heapsort.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;0,6..72,700;1,6..72,400&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/style.css">
+<script>
+  window.MathJax = {
+    tex: { inlineMath: [['\\(', '\\)']], displayMath: [['\\[', '\\]']] },
+    options: { skipHtmlTags: ['script','noscript','style','textarea','pre','code'] }
+  };
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-c.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-python.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism.min.css">
+</head>
+<body data-page="topic-06-heaps">
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="../index.html">DSPF<span>.</span>Notes</a>
+    <nav class="topnav">
+      <a href="../index.html">Home</a>
+      <a href="../topics/01-complexity.html">Chapters</a>
+      <a href="../visualizers.html">Visualizers</a>
+      <a href="../practice.html">Practice</a>
+      <a href="../glossary.html">Glossary</a>
+    </nav>
+    <div class="searchbox">
+      <input id="search-input" type="search" placeholder="Search topics…  ( / )" autocomplete="off" aria-label="Search the textbook">
+      <div class="searchresults" id="search-results"></div>
+    </div>
+  </div>
+</header>
+<div class="shell">
+<nav class="sidebar" aria-label="Chapter navigation">
+<div class="side-group">Chapters</div>
+<a href="../topics/01-complexity.html" data-topic-id="topic-01-complexity">01 · Measuring Cost: Complexity and Asymptotic Notation</a>
+<a href="../topics/02-stacks-queues.html" data-topic-id="topic-02-stacks-queues">02 · Stacks, Queues and Linked Lists</a>
+<a href="../topics/03-trees.html" data-topic-id="topic-03-trees">03 · Trees and Traversals</a>
+<a href="../topics/04-bst.html" data-topic-id="topic-04-bst">04 · Binary Search Trees</a>
+<a href="../topics/05-avl.html" data-topic-id="topic-05-avl">05 · AVL Trees and Rotations</a>
+<a href="../topics/06-heaps.html" data-topic-id="topic-06-heaps" class="active">06 · Heaps and Heapsort</a>
+<a href="../topics/07-graphs.html" data-topic-id="topic-07-graphs">07 · Graphs: Terminology and Representation</a>
+<a href="../topics/08-bfs.html" data-topic-id="topic-08-bfs">08 · Breadth-First Search</a>
+<a href="../topics/09-dfs.html" data-topic-id="topic-09-dfs">09 · Depth-First Search</a>
+<a href="../topics/10-mst.html" data-topic-id="topic-10-mst">10 · Minimum Spanning Trees</a>
+<div class="side-group">Tools</div>
+<a href="../visualizers.html">Interactive Visualizers</a>
+<a href="../practice.html">Practice and Examination Questions</a>
+<a href="../glossary.html">Glossary</a>
+</nav>
+<main>
+<div class="kicker">Chapter 06</div>
+<h1>Heaps and Heapsort</h1>
+<p class="lede">Partial sorting in an array: priority queues, heapify, build-heap and heapsort.</p>
+<h2 id="why">Giving up order to keep one fact</h2>
+
+<p>An AVL tree maintains a total order, and pays for it with a rotation on almost every insert. A <strong>heap</strong> maintains almost nothing: only that the maximum sits at the root. That is all a priority queue needs, and giving up everything else makes the structure dramatically simpler — no pointers, no rotations, just an array.</p>
+
+<div class="box why">
+<span class="box-label">The priority queue problem</span>
+<p>A server runs jobs, each with an expected run time. The policy is shortest remaining processing time. You need: find the next job to run, delete a job when it finishes, and insert a job when it arrives. A sorted array gives \(O(1)\) find and \(O(n)\) insert; an unsorted array gives \(O(n)\) find and \(O(1)\) insert. A heap gives \(O(1)\) find and \(O(\log n)\) for both — the best of both, which is exactly the trade a heap is designed for.</p>
+</div>
+
+<h2 id="property">The heap property and the array layout</h2>
+
+<div class="box def">
+<span class="box-label">Definition — max-heap</span>
+<p>A <strong>complete</strong> binary tree in which every node's key is greater than or equal to the keys of its children. Completeness means every level is full except possibly the last, which fills from the left — and that is precisely what allows the tree to be stored in an array with no gaps.</p>
+</div>
+
+<div class="formula" style="font-family:var(--font-mono);background:var(--paper-2);border:1px solid var(--rule-2);border-radius:9px;padding:14px 18px;margin:18px 0;white-space:pre;overflow-x:auto;font-size:13px;line-height:1.8">For a node at index i (0-based):
+    left child  = 2i + 1
+    right child = 2i + 2
+    parent      = floor((i - 1) / 2)</div>
+
+<div class="box example">
+<span class="box-label">Worked example — reading a heap as an array</span>
+<p>Array [10, 5, 3, 4, 1] represents:</p>
+<div class="codeblock">
+  <div class="codeblock-header"><span class="lang">Tree</span><span class="file">5 nodes, height 2</span></div>
+<pre><code class="language-c">            10 (index 0)
+           /            \
+       5 (1)            3 (2)
+      /     \
+   4 (3)    1 (4)</code></pre>
+</div>
+<p>Check the property: 10 ≥ 5 and 10 ≥ 3; 5 ≥ 4 and 5 ≥ 1. Valid max-heap. Node 3 at index 2 has children at indices 5 and 6, both beyond the array — it is a leaf.</p>
+</div>
+
+<h2 id="operations">Operations</h2>
+
+<div class="tablewrap"><table>
+<thead><tr><th>Operation</th><th>How</th><th>Cost</th></tr></thead>
+<tbody>
+<tr><td><code>top()</code></td><td>Return <code>a[0]</code></td><td>\(O(1)\)</td></tr>
+<tr><td><code>push(x)</code></td><td>Append at the end, then <strong>sift up</strong> while larger than the parent</td><td>\(O(\log n)\)</td></tr>
+<tr><td><code>pop()</code></td><td>Move the last element to the root, shrink, then <strong>sift down</strong></td><td>\(O(\log n)\)</td></tr>
+<tr><td><code>build-heap</code></td><td>Sift down from the last internal node back to the root</td><td>\(O(n)\) — not \(O(n \log n)\)</td></tr>
+<tr><td><code>heapsort</code></td><td>build-heap, then repeatedly swap root with last and sift down</td><td>\(O(n \log n)\)</td></tr>
+</tbody></table></div>
+
+<h2 id="trace">Worked trace — build-heap</h2>
+
+<div class="box example">
+<span class="box-label">Building a max-heap from [4, 10, 3, 5, 1]</span>
+<p>The last internal node is at index \(\lfloor 5/2 \rfloor - 1 = 1\). Sift down from there back to index 0.</p>
+<div class="tablewrap"><table>
+<thead><tr><th>Step</th><th>Action</th><th>Array</th></tr></thead>
+<tbody>
+<tr><td>start</td><td>—</td><td>[4, 10, 3, 5, 1]</td></tr>
+<tr><td>i = 1 (value 10)</td><td>children 5 and 1; 10 is largest, no swap</td><td>[4, 10, 3, 5, 1]</td></tr>
+<tr><td>i = 0 (value 4)</td><td>children 10 and 3; swap with 10</td><td>[10, 4, 3, 5, 1]</td></tr>
+<tr><td>sift continues at index 1 (value 4)</td><td>children 5 and 1; swap with 5</td><td>[10, 5, 3, 4, 1]</td></tr>
+</tbody></table></div>
+<p>Result [10, 5, 3, 4, 1]. Check: 10 ≥ 5, 3 and 5 ≥ 4, 1. Valid.</p>
+</div>
+
+<div class="box why">
+<span class="box-label">Why build-heap is O(n) and not O(n log n)</span>
+<p>Sifting down from a node of height \(k\) costs \(O(k)\). A complete tree has at most \(\lceil n/2^{k+1}\rceil\) nodes of height \(k\). So the total is</p>
+\[
+\sum_k k \cdot \frac{n}{2^{k+1}} = \frac{n}{2}\sum_k \frac{k}{2^k} = \frac{n}{2}\cdot 2 = O(n)
+\]
+<p>because \(\sum k/2^k\) converges to 2. Most nodes are near the bottom where subtrees are tiny, and that is what makes the sum linear.</p>
+</div>
+
+<h2 id="insertdelete">Insert and delete-max traces</h2>
+
+<div class="box example">
+<span class="box-label">Inserting 15 into [10, 5, 3, 4, 1]</span>
+<div class="tablewrap"><table>
+<thead><tr><th>Step</th><th>Action</th><th>Array</th></tr></thead>
+<tbody>
+<tr><td>append</td><td>place at index 5</td><td>[10, 5, 3, 4, 1, 15]</td></tr>
+<tr><td>sift up</td><td>parent of 5 is index 2 (value 3); 15 &gt; 3, swap</td><td>[10, 5, 15, 4, 1, 3]</td></tr>
+<tr><td>sift up</td><td>parent of 2 is index 0 (value 10); 15 &gt; 10, swap</td><td>[15, 5, 10, 4, 1, 3]</td></tr>
+</tbody></table></div>
+<p>Two comparisons, so \(O(\log n)\).</p>
+</div>
+
+<div class="box example">
+<span class="box-label">Deleting the maximum from [15, 5, 10, 4, 1, 3]</span>
+<div class="tablewrap"><table>
+<thead><tr><th>Step</th><th>Action</th><th>Array</th></tr></thead>
+<tbody>
+<tr><td>remove root</td><td>save 15; move the last element (3) to index 0; shrink</td><td>[3, 5, 10, 4, 1]</td></tr>
+<tr><td>sift down</td><td>children 5 and 10; swap with 10</td><td>[10, 5, 3, 4, 1]</td></tr>
+<tr><td>sift down</td><td>index 2 has no children; stop</td><td>[10, 5, 3, 4, 1]</td></tr>
+</tbody></table></div>
+</div>
+
+<div class="viz" id="viz-heap">
+  <div class="viz-head">
+    <h3>Heap</h3>
+    <div class="viz-controls">
+      <input type="number" data-heap="value" placeholder="value" aria-label="Value" style="width:74px">
+      <button data-heap="insert">Insert</button>
+      <button data-heap="extract">Extract max</button>
+      <button data-heap="build">Build [4,10,3,5,1]</button>
+      <button data-heap="clear">Clear</button>
+    </div>
+  </div>
+  <div class="viz-stage"></div>
+  <div class="viz-log"></div>
+</div>
+
+<h2 id="heapsort">Heapsort</h2>
+
+<p>Build a max-heap, then repeat \(n-1\) times: swap the root with the last element, shrink the heap by one, and sift the new root down. The largest element lands in its final position on each pass, and the sorted region grows from the right.</p>
+
+<div class="codeblock">
+  <div class="codeblock-header"><span class="lang">C</span><span class="file">heap.c</span><button class="copy-btn">Copy</button></div>
+<pre><code class="language-c">#include &lt;stdio.h&gt;
+
+static void swap(int *a, int *b) { int t = *a; *a = *b; *b = t; }
+
+/* restore the heap property in the subtree rooted at i, heap size n */
+static void sift_down(int a[], int n, int i) {
+    while (1) {
+        int l = 2 * i + 1, r = 2 * i + 2, big = i;
+        if (l &lt; n &amp;&amp; a[l] &gt; a[big]) big = l;
+        if (r &lt; n &amp;&amp; a[r] &gt; a[big]) big = r;
+        if (big == i) break;
+        swap(&amp;a[i], &amp;a[big]);
+        i = big;
+    }
+}
+
+/* O(n) */
+void build_heap(int a[], int n) {
+    for (int i = n / 2 - 1; i &gt;= 0; i--)
+        sift_down(a, n, i);
+}
+
+/* O(n log n) time, O(1) extra space */
+void heapsort(int a[], int n) {
+    build_heap(a, n);
+    for (int end = n - 1; end &gt; 0; end--) {
+        swap(&amp;a[0], &amp;a[end]);   /* max goes to its final place */
+        sift_down(a, end, 0);    /* restore over the shrunk heap */
+    }
+}
+
+int main(void) {
+    int a[] = {4, 10, 3, 5, 1};
+    int n = 5;
+    heapsort(a, n);
+    for (int i = 0; i &lt; n; i++) printf("%d ", a[i]);   /* 1 3 4 5 10 */
+    printf("\n");
+    return 0;
+}</code></pre>
+</div>
+
+<div class="codeblock">
+  <div class="codeblock-header"><span class="lang">Python</span><span class="file">heap.py</span><button class="copy-btn">Copy</button></div>
+<pre><code class="language-python">def sift_down(a, n, i):
+    while True:
+        left, right, big = 2 * i + 1, 2 * i + 2, i
+        if left < n and a[left] > a[big]:
+            big = left
+        if right < n and a[right] > a[big]:
+            big = right
+        if big == i:
+            return
+        a[i], a[big] = a[big], a[i]
+        i = big
+
+
+def build_heap(a):
+    """O(n) - bottom-up."""
+    for i in range(len(a) // 2 - 1, -1, -1):
+        sift_down(a, len(a), i)
+
+
+def heapsort(a):
+    """O(n log n) time, O(1) extra space."""
+    n = len(a)
+    build_heap(a)
+    for end in range(n - 1, 0, -1):
+        a[0], a[end] = a[end], a[0]
+        sift_down(a, end, 0)
+
+
+# For a priority queue, use the standard library:
+import heapq
+
+h = []
+heapq.heappush(h, 5)      # O(log n)
+heapq.heappush(h, 1)
+heapq.heappush(h, 9)
+print(heapq.heappop(h))   # 1 - heapq is a MIN-heap, not max
+
+if __name__ == "__main__":
+    a = [4, 10, 3, 5, 1]
+    heapsort(a)
+    print(a)              # [1, 3, 4, 5, 10]</code></pre>
+</div>
+
+<div class="box warn">
+<span class="box-label">Python's heapq is a min-heap</span>
+<p><code>heapq</code> gives the smallest element first. For a max-heap, either negate the values on the way in and out, or store tuples <code>(-priority, item)</code>. This is a favourite exam question.</p>
+</div>
+
+<h2 id="mistakes">Common mistakes</h2>
+
+<ol>
+<li><strong>Using the wrong child formula.</strong> Zero-based: children are \(2i+1\) and \(2i+2\). One-based (as in some textbooks): \(2i\) and \(2i+1\). Check which the question uses.</li>
+<li><strong>Claiming build-heap is \(O(n\log n)\).</strong> It is \(O(n)\); the summation above is the proof.</li>
+<li><strong>Forgetting that a heap is not sorted.</strong> The array [10, 5, 3, 4, 1] is a valid heap but not sorted, and inorder traversal of a heap is meaningless.</li>
+<li><strong>Assuming heapsort is stable.</strong> It is not — the swap at the root destroys relative order of equal keys.</li>
+<li><strong>Sifting the wrong direction.</strong> Insert sifts <em>up</em>; delete-max and build-heap sift <em>down</em>.</li>
+</ol>
+
+<h2 id="check">Check your understanding</h2>
+
+<div class="quiz">
+  <div class="qtext">Is [9, 7, 8, 3, 5, 2] a valid max-heap?</div>
+  <div class="opts">
+    <button class="opt" data-correct>Yes — every parent is at least its children</button>
+    <button class="opt">No — 8 is greater than 7</button>
+    <button class="opt">No — the array is not sorted</button>
+    <button class="opt">Only if it is also complete</button>
+  </div>
+  <div class="fb">Check the parent-child pairs: 9 ≥ 7 and 9 ≥ 8; 7 ≥ 3 and 7 ≥ 5; 8 ≥ 2. All hold, so it is a valid max-heap. A heap need not be sorted — 7 and 8 are siblings, and there is no ordering requirement between siblings.</div>
+</div>
+
+<div class="quiz">
+  <div class="qtext">What is the time complexity of build-heap on n elements?</div>
+  <div class="opts">
+    <button class="opt">O(n log n) — n sift-downs of cost log n each</button>
+    <button class="opt" data-correct>O(n) — most nodes are near the bottom where sift-down is cheap</button>
+    <button class="opt">O(log n)</button>
+    <button class="opt">O(n²)</button>
+  </div>
+  <div class="fb">The naive count overestimates because it assumes every sift-down costs log n. In fact a node of height k costs only k, and there are very few tall nodes. Summing k·n/2^(k+1) over k gives 2n, so the bound is O(n).</div>
+</div>
+<nav class="pager" aria-label="Chapter navigation">
+<a href="../topics/05-avl.html"><span class="dir">← Previous</span><span class="ttl">05 · AVL Trees and Rotations</span></a>
+<a class="next" href="../topics/07-graphs.html"><span class="dir">Next →</span><span class="ttl">07 · Graphs: Terminology and Representation</span></a>
+</nav>
+<footer style="margin-top:56px;padding-top:22px;border-top:1px solid var(--rule);font-size:13px;color:var(--ink-3)">
+  <p style="margin:0 0 6px"><strong style="color:var(--ink-2)">Data Structures and Programming Fundamentals</strong> — an interactive textbook built from the CS213/293 lecture series, with Cormen et al. and Balagurusamy as references.</p>
+  <p style="margin:0">Progress is saved in this browser only. <a href="../glossary.html">Glossary</a> · <a href="../practice.html">Practice</a> · <a href="../visualizers.html">Visualizers</a></p>
+</footer>
+</main>
+</div>
+<script>window.DSPF_SEARCH = [{"title": "01 · Measuring Cost: Complexity and Asymptotic Notation", "topic": "Chapter", "url": "topics/01-complexity.html", "keywords": "Big-O, asymptotic, growth rate, amortized, recurrence, complexity Why we compare algorithms by growth, and how to read O, Omega, Theta, o and omega."}, {"title": "02 · Stacks, Queues and Linked Lists", "topic": "Chapter", "url": "topics/02-stacks-queues.html", "keywords": "stack, queue, linked list, circular buffer, deque, LIFO, FIFO LIFO and FIFO containers, how they are built on arrays and pointers, and why the circular buffer exists."}, {"title": "03 · Trees and Traversals", "topic": "Chapter", "url": "topics/03-trees.html", "keywords": "tree, binary tree, preorder, inorder, postorder, level order, traversal Tree terminology, representations, and the four ways to walk a binary tree."}, {"title": "04 · Binary Search Trees", "topic": "Chapter", "url": "topics/04-bst.html", "keywords": "BST, binary search tree, insert, delete, successor, height Ordering a tree so search becomes logarithmic - and the degenerate case that breaks it."}, {"title": "05 · AVL Trees and Rotations", "topic": "Chapter", "url": "topics/05-avl.html", "keywords": "AVL, rotation, balance factor, LL, RR, LR, RL, height bound Restoring the balance invariant with four rotation cases, and why height is guaranteed logarithmic."}, {"title": "06 · Heaps and Heapsort", "topic": "Chapter", "url": "topics/06-heaps.html", "keywords": "heap, priority queue, heapify, build-heap, heapsort, sift Partial sorting in an array: priority queues, heapify, build-heap and heapsort."}, {"title": "07 · Graphs: Terminology and Representation", "topic": "Chapter", "url": "topics/07-graphs.html", "keywords": "graph, adjacency matrix, adjacency list, directed, degree, cycle Vertices, edges, paths and cycles, and the two ways to store a graph."}, {"title": "08 · Breadth-First Search", "topic": "Chapter", "url": "topics/08-bfs.html", "keywords": "BFS, breadth-first, queue, shortest path, connected components, bipartite, diameter Ring-by-ring exploration with a queue, shortest unweighted paths, components and bipartiteness."}, {"title": "09 · Depth-First Search", "topic": "Chapter", "url": "topics/09-dfs.html", "keywords": "DFS, depth-first, stack, topological sort, cycle, strongly connected, finish time Going deep with a stack: discovery and finish times, cycle detection and topological sort."}, {"title": "10 · Minimum Spanning Trees", "topic": "Chapter", "url": "topics/10-mst.html", "keywords": "MST, minimum spanning tree, Kruskal, Prim, union-find, cut property, greedy Kruskal, Prim and the cut property that makes both of them correct."}, {"title": "Interactive Visualizers", "topic": "Tool", "url": "visualizers.html", "keywords": "Drive the algorithms yourself: stack, queue, BST, heap, BFS/DFS and growth rates."}, {"title": "Practice and Examination Questions", "topic": "Tool", "url": "practice.html", "keywords": "Graded questions with full worked solutions, from recall to exam-hard."}, {"title": "Glossary", "topic": "Tool", "url": "glossary.html", "keywords": "Every term used in the course, defined in one line."}, {"title": "Why we need a way to measure cost", "topic": "Ch 01", "url": "topics/01-complexity.html#why", "keywords": "Why we need a way to measure cost"}, {"title": "Counting operations", "topic": "Ch 01", "url": "topics/01-complexity.html#counting", "keywords": "Counting operations"}, {"title": "The five notations", "topic": "Ch 01", "url": "topics/01-complexity.html#notation", "keywords": "The five notations"}, {"title": "The growth hierarchy", "topic": "Ch 01", "url": "topics/01-complexity.html#hierarchy", "keywords": "The growth hierarchy"}, {"title": "How to analyse a piece of code", "topic": "Ch 01", "url": "topics/01-complexity.html#analysis", "keywords": "How to analyse a piece of code"}, {"title": "Recurrences", "topic": "Ch 01", "url": "topics/01-complexity.html#recurrences", "keywords": "Recurrences"}, {"title": "Amortised analysis: the doubling array", "topic": "Ch 01", "url": "topics/01-complexity.html#amortized", "keywords": "Amortised analysis: the doubling array"}, {"title": "Space complexity", "topic": "Ch 01", "url": "topics/01-complexity.html#space", "keywords": "Space complexity"}, {"title": "C and Python implementations", "topic": "Ch 01", "url": "topics/01-complexity.html#code", "keywords": "C and Python implementations"}, {"title": "Common mistakes", "topic": "Ch 01", "url": "topics/01-complexity.html#mistakes", "keywords": "Common mistakes"}, {"title": "Check your understanding", "topic": "Ch 01", "url": "topics/01-complexity.html#check", "keywords": "Check your understanding"}, {"title": "Two ways to decide who goes next", "topic": "Ch 02", "url": "topics/02-stacks-queues.html#why", "keywords": "Two ways to decide who goes next"}, {"title": "Abstract data type versus implementation", "topic": "Ch 02", "url": "topics/02-stacks-queues.html#adt", "keywords": "Abstract data type versus implementation"}, {"title": "Implementations and their costs", "topic": "Ch 02", "url": "topics/02-stacks-queues.html#implementations", "keywords": "Implementations and their costs"}, {"title": "Linked lists", "topic": "Ch 02", "url": "topics/02-stacks-queues.html#linked", "keywords": "Linked lists"}, {"title": "C implementation", "topic": "Ch 02", "url": "topics/02-stacks-queues.html#code", "keywords": "C implementation"}, {"title": "Python implementation", "topic": "Ch 02", "url": "topics/02-stacks-queues.html#python", "keywords": "Python implementation"}, {"title": "Common mistakes", "topic": "Ch 02", "url": "topics/02-stacks-queues.html#mistakes", "keywords": "Common mistakes"}, {"title": "Check your understanding", "topic": "Ch 02", "url": "topics/02-stacks-queues.html#check", "keywords": "Check your understanding"}, {"title": "From a line to a hierarchy", "topic": "Ch 03", "url": "topics/03-trees.html#why", "keywords": "From a line to a hierarchy"}, {"title": "Terminology", "topic": "Ch 03", "url": "topics/03-trees.html#terminology", "keywords": "Terminology"}, {"title": "Counting facts worth memorising", "topic": "Ch 03", "url": "topics/03-trees.html#counting", "keywords": "Counting facts worth memorising"}, {"title": "Representing a binary tree", "topic": "Ch 03", "url": "topics/03-trees.html#representation", "keywords": "Representing a binary tree"}, {"title": "The four traversals", "topic": "Ch 03", "url": "topics/03-trees.html#traversals", "keywords": "The four traversals"}, {"title": "C implementation", "topic": "Ch 03", "url": "topics/03-trees.html#code", "keywords": "C implementation"}, {"title": "Python implementation", "topic": "Ch 03", "url": "topics/03-trees.html#python", "keywords": "Python implementation"}, {"title": "Complexity summary", "topic": "Ch 03", "url": "topics/03-trees.html#complexity", "keywords": "Complexity summary"}, {"title": "Check your understanding", "topic": "Ch 03", "url": "topics/03-trees.html#check", "keywords": "Check your understanding"}, {"title": "Adding order to a tree", "topic": "Ch 04", "url": "topics/04-bst.html#why", "keywords": "Adding order to a tree"}, {"title": "The operations", "topic": "Ch 04", "url": "topics/04-bst.html#operations", "keywords": "The operations"}, {"title": "Deletion, the three cases", "topic": "Ch 04", "url": "topics/04-bst.html#delete", "keywords": "Deletion, the three cases"}, {"title": "The successor, and why it works", "topic": "Ch 04", "url": "topics/04-bst.html#successor", "keywords": "The successor, and why it works"}, {"title": "The degenerate case", "topic": "Ch 04", "url": "topics/04-bst.html#degenerate", "keywords": "The degenerate case"}, {"title": "C implementation", "topic": "Ch 04", "url": "topics/04-bst.html#code", "keywords": "C implementation"}, {"title": "Python implementation", "topic": "Ch 04", "url": "topics/04-bst.html#python", "keywords": "Python implementation"}, {"title": "Common mistakes", "topic": "Ch 04", "url": "topics/04-bst.html#mistakes", "keywords": "Common mistakes"}, {"title": "Check your understanding", "topic": "Ch 04", "url": "topics/04-bst.html#check", "keywords": "Check your understanding"}, {"title": "Fixing the degenerate case", "topic": "Ch 05", "url": "topics/05-avl.html#why", "keywords": "Fixing the degenerate case"}, {"title": "The height bound, and why it matters", "topic": "Ch 05", "url": "topics/05-avl.html#heightbound", "keywords": "The height bound, and why it matters"}, {"title": "The four rotation cases", "topic": "Ch 05", "url": "topics/05-avl.html#rotations", "keywords": "The four rotation cases"}, {"title": "Insertion versus deletion", "topic": "Ch 05", "url": "topics/05-avl.html#insertdelete", "keywords": "Insertion versus deletion"}, {"title": "C implementation", "topic": "Ch 05", "url": "topics/05-avl.html#code", "keywords": "C implementation"}, {"title": "Complexity", "topic": "Ch 05", "url": "topics/05-avl.html#complexity", "keywords": "Complexity"}, {"title": "Check your understanding", "topic": "Ch 05", "url": "topics/05-avl.html#check", "keywords": "Check your understanding"}, {"title": "Giving up order to keep one fact", "topic": "Ch 06", "url": "topics/06-heaps.html#why", "keywords": "Giving up order to keep one fact"}, {"title": "The heap property and the array layout", "topic": "Ch 06", "url": "topics/06-heaps.html#property", "keywords": "The heap property and the array layout"}, {"title": "Operations", "topic": "Ch 06", "url": "topics/06-heaps.html#operations", "keywords": "Operations"}, {"title": "Worked trace — build-heap", "topic": "Ch 06", "url": "topics/06-heaps.html#trace", "keywords": "Worked trace — build-heap"}, {"title": "Insert and delete-max traces", "topic": "Ch 06", "url": "topics/06-heaps.html#insertdelete", "keywords": "Insert and delete-max traces"}, {"title": "Heapsort", "topic": "Ch 06", "url": "topics/06-heaps.html#heapsort", "keywords": "Heapsort"}, {"title": "Common mistakes", "topic": "Ch 06", "url": "topics/06-heaps.html#mistakes", "keywords": "Common mistakes"}, {"title": "Check your understanding", "topic": "Ch 06", "url": "topics/06-heaps.html#check", "keywords": "Check your understanding"}, {"title": "Dropping the no-cycles rule", "topic": "Ch 07", "url": "topics/07-graphs.html#why", "keywords": "Dropping the no-cycles rule"}, {"title": "Terminology", "topic": "Ch 07", "url": "topics/07-graphs.html#terminology", "keywords": "Terminology"}, {"title": "The two representations", "topic": "Ch 07", "url": "topics/07-graphs.html#representation", "keywords": "The two representations"}, {"title": "C implementation", "topic": "Ch 07", "url": "topics/07-graphs.html#code", "keywords": "C implementation"}, {"title": "Check your understanding", "topic": "Ch 07", "url": "topics/07-graphs.html#check", "keywords": "Check your understanding"}, {"title": "Exploring in rings", "topic": "Ch 08", "url": "topics/08-bfs.html#why", "keywords": "Exploring in rings"}, {"title": "Why BFS finds shortest paths", "topic": "Ch 08", "url": "topics/08-bfs.html#why-shortest", "keywords": "Why BFS finds shortest paths"}, {"title": "Worked trace", "topic": "Ch 08", "url": "topics/08-bfs.html#trace", "keywords": "Worked trace"}, {"title": "What BFS is used for", "topic": "Ch 08", "url": "topics/08-bfs.html#applications", "keywords": "What BFS is used for"}, {"title": "C and Python", "topic": "Ch 08", "url": "topics/08-bfs.html#code", "keywords": "C and Python"}, {"title": "Check your understanding", "topic": "Ch 08", "url": "topics/08-bfs.html#check", "keywords": "Check your understanding"}, {"title": "Going as deep as possible", "topic": "Ch 09", "url": "topics/09-dfs.html#why", "keywords": "Going as deep as possible"}, {"title": "Edge classification", "topic": "Ch 09", "url": "topics/09-dfs.html#edgeclass", "keywords": "Edge classification"}, {"title": "What DFS is used for", "topic": "Ch 09", "url": "topics/09-dfs.html#applications", "keywords": "What DFS is used for"}, {"title": "C and Python", "topic": "Ch 09", "url": "topics/09-dfs.html#code", "keywords": "C and Python"}, {"title": "Check your understanding", "topic": "Ch 09", "url": "topics/09-dfs.html#check", "keywords": "Check your understanding"}, {"title": "Connecting everything as cheaply as possible", "topic": "Ch 10", "url": "topics/10-mst.html#why", "keywords": "Connecting everything as cheaply as possible"}, {"title": "The cut property — why both algorithms work", "topic": "Ch 10", "url": "topics/10-mst.html#cut", "keywords": "The cut property — why both algorithms work"}, {"title": "Kruskal's algorithm", "topic": "Ch 10", "url": "topics/10-mst.html#kruskal", "keywords": "Kruskal's algorithm"}, {"title": "Prim's algorithm", "topic": "Ch 10", "url": "topics/10-mst.html#prim", "keywords": "Prim's algorithm"}, {"title": "The same graph by both methods", "topic": "Ch 10", "url": "topics/10-mst.html#trace", "keywords": "The same graph by both methods"}, {"title": "C implementation", "topic": "Ch 10", "url": "topics/10-mst.html#code", "keywords": "C implementation"}, {"title": "Common mistakes", "topic": "Ch 10", "url": "topics/10-mst.html#mistakes", "keywords": "Common mistakes"}, {"title": "Check your understanding", "topic": "Ch 10", "url": "topics/10-mst.html#check", "keywords": "Check your understanding"}];</script>
+<script src="../assets/app.js"></script>
+</body>
+</html>
