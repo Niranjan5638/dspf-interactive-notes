@@ -1,0 +1,98 @@
+<!--TOPIC:home|Home|-->
+<section class="hero">
+  <div class="kicker">CS213/293 · Data Structures and Algorithms</div>
+  <h1>Data Structures and Programming Fundamentals</h1>
+  <p class="lede">An interactive textbook that teaches the subject from first principles: what a data structure is for, how it is built in C and Python, what it costs, and where it breaks. Every chapter is traceable by hand and drivable on screen.</p>
+  <div class="hero-meta">
+    <span>10 chapters</span>
+    <span>C and Python throughout</span>
+    <span>6 interactive visualizers</span>
+    <span>Graded practice with solutions</span>
+    <span id="progress-count" data-total="10">0 of 10 chapters read</span>
+  </div>
+</section>
+
+<h2 id="start">Start here</h2>
+<p>The chapters follow the lecture order, because each one depends on the last. Complexity gives you the language for comparing everything that follows. Stacks and queues are the simplest containers. Trees generalise a linked list. A binary search tree imposes order on a tree so search becomes fast. AVL trees fix the case where that order collapses. Heaps give up full ordering to keep only the maximum at the root. Graphs generalise trees by allowing cycles, and the last three chapters are about traversing them.</p>
+
+<div class="box why">
+<span class="box-label">If you have twenty minutes</span>
+<p>Read chapter 1 and chapter 6. Complexity is the vocabulary; heaps are the cleanest example of a structure designed around one operation. Between them they teach you how to think about the rest.</p>
+</div>
+
+<h2 id="chapters">Chapters</h2>
+<div class="grid">
+  <a class="card" href="topics/01-complexity.html" data-topic-id="topic-01-complexity">
+    <div class="cnum">Chapter 01</div>
+    <h3>Measuring Cost: Complexity and Asymptotic Notation</h3>
+    <p>Why we compare algorithms by growth, and how to read O, Ω, Θ, o and ω.</p>
+  </a>
+  <a class="card" href="topics/02-stacks-queues.html" data-topic-id="topic-02-stacks-queues">
+    <div class="cnum">Chapter 02</div>
+    <h3>Stacks, Queues and Linked Lists</h3>
+    <p>LIFO and FIFO containers, how they are built on arrays and pointers, and why the circular buffer exists.</p>
+  </a>
+  <a class="card" href="topics/03-trees.html" data-topic-id="topic-03-trees">
+    <div class="cnum">Chapter 03</div>
+    <h3>Trees and Traversals</h3>
+    <p>Tree terminology, representations, and the four ways to walk a binary tree.</p>
+  </a>
+  <a class="card" href="topics/04-bst.html" data-topic-id="topic-04-bst">
+    <div class="cnum">Chapter 04</div>
+    <h3>Binary Search Trees</h3>
+    <p>Ordering a tree so search becomes logarithmic — and the degenerate case that breaks it.</p>
+  </a>
+  <a class="card" href="topics/05-avl.html" data-topic-id="topic-05-avl">
+    <div class="cnum">Chapter 05</div>
+    <h3>AVL Trees and Rotations</h3>
+    <p>Restoring the balance invariant with four rotation cases, and why height stays logarithmic.</p>
+  </a>
+  <a class="card" href="topics/06-heaps.html" data-topic-id="topic-06-heaps">
+    <div class="cnum">Chapter 06</div>
+    <h3>Heaps and Heapsort</h3>
+    <p>Partial sorting in an array: priority queues, heapify, build-heap and heapsort.</p>
+  </a>
+  <a class="card" href="topics/07-graphs.html" data-topic-id="topic-07-graphs">
+    <div class="cnum">Chapter 07</div>
+    <h3>Graphs: Terminology and Representation</h3>
+    <p>Vertices, edges, paths and cycles, and the two ways to store a graph.</p>
+  </a>
+  <a class="card" href="topics/08-bfs.html" data-topic-id="topic-08-bfs">
+    <div class="cnum">Chapter 08</div>
+    <h3>Breadth-First Search</h3>
+    <p>Ring-by-ring exploration with a queue, shortest unweighted paths, components and bipartiteness.</p>
+  </a>
+  <a class="card" href="topics/09-dfs.html" data-topic-id="topic-09-dfs">
+    <div class="cnum">Chapter 09</div>
+    <h3>Depth-First Search</h3>
+    <p>Going deep with a stack: discovery and finish times, cycle detection and topological sort.</p>
+  </a>
+  <a class="card" href="topics/10-mst.html" data-topic-id="topic-10-mst">
+    <div class="cnum">Chapter 10</div>
+    <h3>Minimum Spanning Trees</h3>
+    <p>Kruskal, Prim and the cut property that makes both of them correct.</p>
+  </a>
+</div>
+
+<h2 id="tools">Tools</h2>
+<div class="grid">
+  <a class="card" href="visualizers.html">
+    <div class="cnum">Interactive</div>
+    <h3>Visualizers</h3>
+    <p>Push and pop a stack, insert into a BST, sift a heap, step through BFS and DFS, explore growth rates.</p>
+  </a>
+  <a class="card" href="practice.html">
+    <div class="cnum">Assessment</div>
+    <h3>Practice and Examination Questions</h3>
+    <p>Recall, applied and exam-hard questions with full worked solutions.</p>
+  </a>
+  <a class="card" href="glossary.html">
+    <div class="cnum">Reference</div>
+    <h3>Glossary</h3>
+    <p>Every term used in the course, defined in one line.</p>
+  </a>
+</div>
+
+<h2 id="scope">What this covers, and what it does not</h2>
+<p>The course is defined by ten lecture sessions: 01 complexity, 03 stacks and queues, 05 trees, 06 binary search trees, 08 heaps, 10 search trees and AVL, 13 graphs, 14 BFS, 15 DFS and 16 minimum spanning trees. Lectures 02, 04, 07, 09, 11 and 12 do not exist for this course.</p>
+<p>Two consequences follow, and they matter for revision. There is <strong>no general sorting chapter</strong> — the only sorting taught is heapsort, inside chapter 6. And there is <strong>no hashing chapter</strong>; hash tables appear once, as a passing mention in the BST material. Material outside this scope is marked <span class="pill supp">supplementary</span> wherever it appears.</p>
