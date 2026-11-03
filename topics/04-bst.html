@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>04 · Binary Search Trees · DSPF</title>
+<meta name="description" content="Ordering a tree so search becomes logarithmic - and the degenerate case that breaks it.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;0,6..72,700;1,6..72,400&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/style.css">
+<script>
+  window.MathJax = {
+    tex: { inlineMath: [['\\(', '\\)']], displayMath: [['\\[', '\\]']] },
+    options: { skipHtmlTags: ['script','noscript','style','textarea','pre','code'] }
+  };
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-c.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-python.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism.min.css">
+</head>
+<body data-page="topic-04-bst">
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="../index.html">DSPF<span>.</span>Notes</a>
+    <nav class="topnav">
+      <a href="../index.html">Home</a>
+      <a href="../topics/01-complexity.html">Chapters</a>
+      <a href="../visualizers.html">Visualizers</a>
+      <a href="../practice.html">Practice</a>
+      <a href="../glossary.html">Glossary</a>
+    </nav>
+    <div class="searchbox">
+      <input id="search-input" type="search" placeholder="Search topics…  ( / )" autocomplete="off" aria-label="Search the textbook">
+      <div class="searchresults" id="search-results"></div>
+    </div>
+  </div>
+</header>
+<div class="shell">
+<nav class="sidebar" aria-label="Chapter navigation">
+<div class="side-group">Chapters</div>
+<a href="../topics/01-complexity.html" data-topic-id="topic-01-complexity">01 · Measuring Cost: Complexity and Asymptotic Notation</a>
+<a href="../topics/02-stacks-queues.html" data-topic-id="topic-02-stacks-queues">02 · Stacks, Queues and Linked Lists</a>
+<a href="../topics/03-trees.html" data-topic-id="topic-03-trees">03 · Trees and Traversals</a>
+<a href="../topics/04-bst.html" data-topic-id="topic-04-bst" class="active">04 · Binary Search Trees</a>
+<a href="../topics/05-avl.html" data-topic-id="topic-05-avl">05 · AVL Trees and Rotations</a>
+<a href="../topics/06-heaps.html" data-topic-id="topic-06-heaps">06 · Heaps and Heapsort</a>
+<a href="../topics/07-graphs.html" data-topic-id="topic-07-graphs">07 · Graphs: Terminology and Representation</a>
+<a href="../topics/08-bfs.html" data-topic-id="topic-08-bfs">08 · Breadth-First Search</a>
+<a href="../topics/09-dfs.html" data-topic-id="topic-09-dfs">09 · Depth-First Search</a>
+<a href="../topics/10-mst.html" data-topic-id="topic-10-mst">10 · Minimum Spanning Trees</a>
+<div class="side-group">Tools</div>
+<a href="../visualizers.html">Interactive Visualizers</a>
+<a href="../practice.html">Practice and Examination Questions</a>
+<a href="../glossary.html">Glossary</a>
+</nav>
+<main>
+<div class="kicker">Chapter 04</div>
+<h1>Binary Search Trees</h1>
+<p class="lede">Ordering a tree so search becomes logarithmic - and the degenerate case that breaks it.</p>
+<h2 id="why">Adding order to a tree</h2>
+
+<p>Chapter 3's tree lets you visit every node, but finding one still requires visiting everything. A <strong>binary search tree</strong> adds a single rule that turns the tree into an ordered map with logarithmic search — provided the tree stays balanced, which is chapter 5's problem.</p>
+
+<div class="box def">
+<span class="box-label">Definition — BST property</span>
+<p>For every node \(x\): every key in the left subtree of \(x\) is less than \(x\)'s key, and every key in the right subtree is greater. Duplicates are either forbidden or handled by a fixed convention (keep a count, or always go right).</p>
+</div>
+
+<p>Three consequences follow immediately, and they are the ones to state in an exam: an <strong>inorder traversal yields the keys in sorted order</strong>; the <strong>minimum is the leftmost node</strong>; and the <strong>maximum is the rightmost</strong>.</p>
+
+<h2 id="operations">The operations</h2>
+
+<div class="tablewrap"><table>
+<thead><tr><th>Operation</th><th>How</th><th>Cost</th></tr></thead>
+<tbody>
+<tr><td>Search</td><td>Compare at the root; go left if smaller, right if larger</td><td>\(O(h)\)</td></tr>
+<tr><td>Insert</td><td>Search to a null child, attach the new key there</td><td>\(O(h)\)</td></tr>
+<tr><td>Minimum / maximum</td><td>Follow left / right pointers to the end</td><td>\(O(h)\)</td></tr>
+<tr><td>Successor</td><td>Right subtree's minimum, or climb until you come up from a left child</td><td>\(O(h)\)</td></tr>
+<tr><td>Delete</td><td>Three cases — see below</td><td>\(O(h)\)</td></tr>
+</tbody></table></div>
+
+<p>Everything is \(O(h)\), not \(O(\log n)\). The two are the same only when the tree is balanced, and that distinction is the whole point of the chapter.</p>
+
+<h2 id="delete">Deletion, the three cases</h2>
+
+<ol>
+<li><strong>Leaf.</strong> Remove it. The parent's pointer becomes null.</li>
+<li><strong>One child.</strong> Splice the child into the node's place. The parent now points at the grandchild.</li>
+<li><strong>Two children.</strong> Replace the node's key with its <strong>inorder successor</strong> — the minimum of the right subtree — then delete that successor. By construction the successor has no left child, so it falls into case 1 or 2.</li>
+</ol>
+
+<div class="box example">
+<span class="box-label">Worked example — deleting a two-child node</span>
+<p>Tree: 50 with left 30 (children 20, 40) and right 70 (children 60, 80). Delete 50.</p>
+<p>The inorder successor of 50 is the minimum of its right subtree: 60. Copy 60 into the root, then delete 60 from the right subtree. Node 60 was a leaf, so this is case 1. Result: root 60, left 30 (20, 40), right 70 (—, 80).</p>
+<p>The tree is still a valid BST, and inorder still reads 20 30 40 60 70 80.</p>
+</div>
+
+<h2 id="successor">The successor, and why it works</h2>
+
+<p>To find the successor of a key \(k\): if \(k\)'s right subtree is non-empty, the successor is its minimum. Otherwise the successor is the lowest ancestor whose left subtree contains \(k\) — found by climbing while you are the right child.</p>
+
+<div class="box example">
+<span class="box-label">Worked example — both branches</span>
+<p>In the tree above (after deletion: root 60, left 30 with children 20 and 40, right 70 with child 80):</p>
+<ul>
+<li>Successor of 30: right subtree exists, its minimum is 40. Answer 40.</li>
+<li>Successor of 40: no right subtree, so climb — 40 is a right child of 30, continue; 30 is a left child of 60, stop. Answer 60.</li>
+<li>Successor of 80: no right subtree; 80 is a right child of 70, 70 is a right child of 60, 60 has no parent. Answer: none, 80 is the maximum.</li>
+</ul>
+</div>
+
+<h2 id="degenerate">The degenerate case</h2>
+
+<p>Insert 10, 20, 30, 40, 50 in that order. Every new key is larger than everything before it, so it always goes to the right. The result is a chain of height 4 with five nodes: search is now \(O(n)\), and the tree has degenerated into a linked list.</p>
+
+<p>The same five keys inserted in the order 30, 20, 40, 10, 50 give a balanced tree of height 2. <strong>The shape depends entirely on insertion order</strong>, which is why the average case (\(O(\log n)\) for random order) and the worst case (\(O(n)\)) are so far apart.</p>
+
+<div class="box why">
+<span class="box-label">Why this motivates AVL</span>
+<p>Every BST operation costs \(O(h)\). The structure is only useful when \(h = O(\log n)\), and nothing in the BST definition guarantees that. Chapter 5 adds an invariant that does — at the cost of some rebalancing work on insert and delete.</p>
+</div>
+
+<h2 id="code">C implementation</h2>
+
+<div class="codeblock">
+  <div class="codeblock-header"><span class="lang">C</span><span class="file">bst.c</span><button class="copy-btn">Copy</button></div>
+<pre><code class="language-c">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+
+typedef struct Node {
+    int key;
+    struct Node *left, *right;
+} Node;
+
+Node *node_new(int k) {
+    Node *n = malloc(sizeof *n);
+    if (!n) return NULL;
+    n-&gt;key = k; n-&gt;left = n-&gt;right = NULL;
+    return n;
+}
+
+/* O(h) */
+Node *bst_search(Node *t, int k) {
+    while (t &amp;&amp; t-&gt;key != k)
+        t = (k &lt; t-&gt;key) ? t-&gt;left : t-&gt;right;
+    return t;
+}
+
+/* O(h): walk down to a null child and attach */
+Node *bst_insert(Node *t, int k) {
+    if (!t) return node_new(k);
+    if (k &lt; t-&gt;key)      t-&gt;left  = bst_insert(t-&gt;left,  k);
+    else if (k &gt; t-&gt;key) t-&gt;right = bst_insert(t-&gt;right, k);
+    return t;                       /* duplicates ignored */
+}
+
+Node *bst_min(Node *t) {
+    if (!t) return NULL;
+    while (t-&gt;left) t = t-&gt;left;
+    return t;
+}
+
+/* successor: right subtree's min, else lowest ancestor we came up from the left */
+Node *bst_successor(Node *root, int k) {
+    Node *succ = NULL, *t = root;
+    while (t &amp;&amp; t-&gt;key != k) {
+        if (k &lt; t-&gt;key) { succ = t; t = t-&gt;left; }
+        else            { t = t-&gt;right; }
+    }
+    if (!t) return NULL;
+    if (t-&gt;right) return bst_min(t-&gt;right);
+    return succ;
+}
+
+/* O(h) - the three cases */
+Node *bst_delete(Node *t, int k) {
+    if (!t) return NULL;
+    if (k &lt; t-&gt;key)      { t-&gt;left  = bst_delete(t-&gt;left,  k); return t; }
+    if (k &gt; t-&gt;key)      { t-&gt;right = bst_delete(t-&gt;right, k); return t; }
+
+    if (!t-&gt;left)  { Node *r = t-&gt;right; free(t); return r; }   /* case 1/2 */
+    if (!t-&gt;right) { Node *l = t-&gt;left;  free(t); return l; }   /* case 2   */
+    Node *s = bst_min(t-&gt;right);                                /* case 3   */
+    t-&gt;key = s-&gt;key;
+    t-&gt;right = bst_delete(t-&gt;right, s-&gt;key);
+    return t;
+}
+
+void inorder(const Node *t) {
+    if (!t) return;
+    inorder(t-&gt;left); printf("%d ", t-&gt;key); inorder(t-&gt;right);
+}
+
+int main(void) {
+    Node *root = NULL;
+    int keys[] = {50, 30, 70, 20, 40, 60, 80};
+    for (int i = 0; i &lt; 7; i++) root = bst_insert(root, keys[i]);
+    inorder(root); printf("\n");                 /* 20 30 40 50 60 70 80 */
+    printf("succ(40) = %d\n", bst_successor(root, 40)-&gt;key);   /* 50 */
+    root = bst_delete(root, 50);
+    inorder(root); printf("\n");                 /* 20 30 40 60 70 80 */
+    return 0;
+}</code></pre>
+</div>
+
+<h2 id="python">Python implementation</h2>
+
+<div class="codeblock">
+  <div class="codeblock-header"><span class="lang">Python</span><span class="file">bst.py</span><button class="copy-btn">Copy</button></div>
+<pre><code class="language-python">class Node:
+    __slots__ = ("key", "left", "right")
+    def __init__(self, key):
+        self.key = key
+        self.left = self.right = None
+
+
+class BST:
+    def __init__(self):
+        self.root = None
+
+    def insert(self, key):
+        """O(h). Iterative, so no recursion limit."""
+        if self.root is None:
+            self.root = Node(key)
+            return
+        cur = self.root
+        while True:
+            if key < cur.key:
+                if cur.left is None:
+                    cur.left = Node(key)
+                    return
+                cur = cur.left
+            elif key > cur.key:
+                if cur.right is None:
+                    cur.right = Node(key)
+                    return
+                cur = cur.right
+            else:
+                return                       # duplicate
+
+    def search(self, key):
+        cur = self.root
+        while cur and cur.key != key:
+            cur = cur.left if key < cur.key else cur.right
+        return cur
+
+    def inorder(self):
+        out, stack, cur = [], [], self.root
+        while stack or cur:                  # explicit stack, O(h) space
+            while cur:
+                stack.append(cur)
+                cur = cur.left
+            cur = stack.pop()
+            out.append(cur.key)
+            cur = cur.right
+        return out
+
+    def delete(self, key):
+        def _del(node, k):
+            if node is None:
+                return None
+            if k < node.key:
+                node.left = _del(node.left, k)
+            elif k > node.key:
+                node.right = _del(node.right, k)
+            else:
+                if node.left is None:
+                    return node.right
+                if node.right is None:
+                    return node.left
+                succ = node.right
+                while succ.left:
+                    succ = succ.left
+                node.key = succ.key
+                node.right = _del(node.right, succ.key)
+            return node
+        self.root = _del(self.root, key)
+
+
+if __name__ == "__main__":
+    t = BST()
+    for k in (50, 30, 70, 20, 40, 60, 80):
+        t.insert(k)
+    print(t.inorder())      # [20, 30, 40, 50, 60, 70, 80]
+    t.delete(50)
+    print(t.inorder())      # [20, 30, 40, 60, 70, 80]</code></pre>
+</div>
+
+<div class="viz" id="viz-bst">
+  <div class="viz-head">
+    <h3>Build a BST</h3>
+    <div class="viz-controls">
+      <input type="number" data-bst="value" placeholder="key" aria-label="Key" style="width:70px">
+      <button data-bst="insert">Insert</button>
+      <button data-bst="random">Random</button>
+      <button data-bst="clear">Clear</button>
+    </div>
+  </div>
+  <div class="viz-stage"></div>
+  <div class="viz-log"></div>
+</div>
+
+<h2 id="mistakes">Common mistakes</h2>
+
+<ol>
+<li><strong>Deleting a two-child node by promoting the left child.</strong> That breaks the ordering. The successor (or predecessor) is the only safe replacement.</li>
+<li><strong>Assuming search is \(O(\log n)\) always.</strong> It is \(O(h)\), and \(h\) can be \(n-1\).</li>
+<li><strong>Forgetting to update the parent's pointer</strong> when deleting the root.</li>
+<li><strong>Comparing only with the parent during search</strong> instead of walking from the root.</li>
+<li><strong>Allowing duplicates silently.</strong> Choose a convention and state it.</li>
+</ol>
+
+<h2 id="check">Check your understanding</h2>
+
+<div class="quiz">
+  <div class="qtext">Keys 1, 2, 3, 4, 5 are inserted into an empty BST in that order. What is the height of the resulting tree?</div>
+  <div class="opts">
+    <button class="opt">2</button>
+    <button class="opt" data-correct>4</button>
+    <button class="opt">5</button>
+    <button class="opt">3</button>
+  </div>
+  <div class="fb">Each key is larger than all previous ones, so each becomes a right child of the previous — a chain of 5 nodes. Height in edges is 5 − 1 = 4. This is the degenerate case; search is now O(n).</div>
+</div>
+
+<div class="quiz">
+  <div class="qtext">What is the inorder successor of a node with a non-empty right subtree?</div>
+  <div class="opts">
+    <button class="opt">Its parent</button>
+    <button class="opt">The maximum of its left subtree</button>
+    <button class="opt" data-correct>The minimum of its right subtree</button>
+    <button class="opt">The root</button>
+  </div>
+  <div class="fb">Everything in the right subtree is greater than the node, and the smallest of those is the next key in sorted order. Following left pointers to the end of the right subtree finds it in O(h).</div>
+</div>
+<nav class="pager" aria-label="Chapter navigation">
+<a href="../topics/03-trees.html"><span class="dir">← Previous</span><span class="ttl">03 · Trees and Traversals</span></a>
+<a class="next" href="../topics/05-avl.html"><span class="dir">Next →</span><span class="ttl">05 · AVL Trees and Rotations</span></a>
+</nav>
+<footer style="margin-top:56px;padding-top:22px;border-top:1px solid var(--rule);font-size:13px;color:var(--ink-3)">
+  <p style="margin:0 0 6px"><strong style="color:var(--ink-2)">Data Structures and Programming Fundamentals</strong> — an interactive textbook built from the CS213/293 lecture series, with Cormen et al. and Balagurusamy as references.</p>
+  <p style="margin:0">Progress is saved in this browser only. <a href="../glossary.html">Glossary</a> · <a href="../practice.html">Practice</a> · <a href="../visualizers.html">Visualizers</a></p>
+</footer>
+</main>
+</div>
+<script>window.DSPF_SEARCH = [{"title": "01 · Measuring Cost: Complexity and Asymptotic Notation", "topic": "Chapter", "url": "topics/01-complexity.html", "keywords": "Big-O, asymptotic, growth rate, amortized, recurrence, complexity Why we compare algorithms by growth, and how to read O, Omega, Theta, o and omega."}, {"title": "02 · Stacks, Queues and Linked Lists", "topic": "Chapter", "url": "topics/02-stacks-queues.html", "keywords": "stack, queue, linked list, circular buffer, deque, LIFO, FIFO LIFO and FIFO containers, how they are built on arrays and pointers, and why the circular buffer exists."}, {"title": "03 · Trees and Traversals", "topic": "Chapter", "url": "topics/03-trees.html", "keywords": "tree, binary tree, preorder, inorder, postorder, level order, traversal Tree terminology, representations, and the four ways to walk a binary tree."}, {"title": "04 · Binary Search Trees", "topic": "Chapter", "url": "topics/04-bst.html", "keywords": "BST, binary search tree, insert, delete, successor, height Ordering a tree so search becomes logarithmic - and the degenerate case that breaks it."}, {"title": "05 · AVL Trees and Rotations", "topic": "Chapter", "url": "topics/05-avl.html", "keywords": "AVL, rotation, balance factor, LL, RR, LR, RL, height bound Restoring the balance invariant with four rotation cases, and why height is guaranteed logarithmic."}, {"title": "06 · Heaps and Heapsort", "topic": "Chapter", "url": "topics/06-heaps.html", "keywords": "heap, priority queue, heapify, build-heap, heapsort, sift Partial sorting in an array: priority queues, heapify, build-heap and heapsort."}, {"title": "07 · Graphs: Terminology and Representation", "topic": "Chapter", "url": "topics/07-graphs.html", "keywords": "graph, adjacency matrix, adjacency list, directed, degree, cycle Vertices, edges, paths and cycles, and the two ways to store a graph."}, {"title": "08 · Breadth-First Search", "topic": "Chapter", "url": "topics/08-bfs.html", "keywords": "BFS, breadth-first, queue, shortest path, connected components, bipartite, diameter Ring-by-ring exploration with a queue, shortest unweighted paths, components and bipartiteness."}, {"title": "09 · Depth-First Search", "topic": "Chapter", "url": "topics/09-dfs.html", "keywords": "DFS, depth-first, stack, topological sort, cycle, strongly connected, finish time Going deep with a stack: discovery and finish times, cycle detection and topological sort."}, {"title": "10 · Minimum Spanning Trees", "topic": "Chapter", "url": "topics/10-mst.html", "keywords": "MST, minimum spanning tree, Kruskal, Prim, union-find, cut property, greedy Kruskal, Prim and the cut property that makes both of them correct."}, {"title": "Interactive Visualizers", "topic": "Tool", "url": "visualizers.html", "keywords": "Drive the algorithms yourself: stack, queue, BST, heap, BFS/DFS and growth rates."}, {"title": "Practice and Examination Questions", "topic": "Tool", "url": "practice.html", "keywords": "Graded questions with full worked solutions, from recall to exam-hard."}, {"title": "Glossary", "topic": "Tool", "url": "glossary.html", "keywords": "Every term used in the course, defined in one line."}, {"title": "Why we need a way to measure cost", "topic": "Ch 01", "url": "topics/01-complexity.html#why", "keywords": "Why we need a way to measure cost"}, {"title": "Counting operations", "topic": "Ch 01", "url": "topics/01-complexity.html#counting", "keywords": "Counting operations"}, {"title": "The five notations", "topic": "Ch 01", "url": "topics/01-complexity.html#notation", "keywords": "The five notations"}, {"title": "The growth hierarchy", "topic": "Ch 01", "url": "topics/01-complexity.html#hierarchy", "keywords": "The growth hierarchy"}, {"title": "How to analyse a piece of code", "topic": "Ch 01", "url": "topics/01-complexity.html#analysis", "keywords": "How to analyse a piece of code"}, {"title": "Recurrences", "topic": "Ch 01", "url": "topics/01-complexity.html#recurrences", "keywords": "Recurrences"}, {"title": "Amortised analysis: the doubling array", "topic": "Ch 01", "url": "topics/01-complexity.html#amortized", "keywords": "Amortised analysis: the doubling array"}, {"title": "Space complexity", "topic": "Ch 01", "url": "topics/01-complexity.html#space", "keywords": "Space complexity"}, {"title": "C and Python implementations", "topic": "Ch 01", "url": "topics/01-complexity.html#code", "keywords": "C and Python implementations"}, {"title": "Common mistakes", "topic": "Ch 01", "url": "topics/01-complexity.html#mistakes", "keywords": "Common mistakes"}, {"title": "Check your understanding", "topic": "Ch 01", "url": "topics/01-complexity.html#check", "keywords": "Check your understanding"}, {"title": "Two ways to decide who goes next", "topic": "Ch 02", "url": "topics/02-stacks-queues.html#why", "keywords": "Two ways to decide who goes next"}, {"title": "Abstract data type versus implementation", "topic": "Ch 02", "url": "topics/02-stacks-queues.html#adt", "keywords": "Abstract data type versus implementation"}, {"title": "Implementations and their costs", "topic": "Ch 02", "url": "topics/02-stacks-queues.html#implementations", "keywords": "Implementations and their costs"}, {"title": "Linked lists", "topic": "Ch 02", "url": "topics/02-stacks-queues.html#linked", "keywords": "Linked lists"}, {"title": "C implementation", "topic": "Ch 02", "url": "topics/02-stacks-queues.html#code", "keywords": "C implementation"}, {"title": "Python implementation", "topic": "Ch 02", "url": "topics/02-stacks-queues.html#python", "keywords": "Python implementation"}, {"title": "Common mistakes", "topic": "Ch 02", "url": "topics/02-stacks-queues.html#mistakes", "keywords": "Common mistakes"}, {"title": "Check your understanding", "topic": "Ch 02", "url": "topics/02-stacks-queues.html#check", "keywords": "Check your understanding"}, {"title": "From a line to a hierarchy", "topic": "Ch 03", "url": "topics/03-trees.html#why", "keywords": "From a line to a hierarchy"}, {"title": "Terminology", "topic": "Ch 03", "url": "topics/03-trees.html#terminology", "keywords": "Terminology"}, {"title": "Counting facts worth memorising", "topic": "Ch 03", "url": "topics/03-trees.html#counting", "keywords": "Counting facts worth memorising"}, {"title": "Representing a binary tree", "topic": "Ch 03", "url": "topics/03-trees.html#representation", "keywords": "Representing a binary tree"}, {"title": "The four traversals", "topic": "Ch 03", "url": "topics/03-trees.html#traversals", "keywords": "The four traversals"}, {"title": "C implementation", "topic": "Ch 03", "url": "topics/03-trees.html#code", "keywords": "C implementation"}, {"title": "Python implementation", "topic": "Ch 03", "url": "topics/03-trees.html#python", "keywords": "Python implementation"}, {"title": "Complexity summary", "topic": "Ch 03", "url": "topics/03-trees.html#complexity", "keywords": "Complexity summary"}, {"title": "Check your understanding", "topic": "Ch 03", "url": "topics/03-trees.html#check", "keywords": "Check your understanding"}, {"title": "Adding order to a tree", "topic": "Ch 04", "url": "topics/04-bst.html#why", "keywords": "Adding order to a tree"}, {"title": "The operations", "topic": "Ch 04", "url": "topics/04-bst.html#operations", "keywords": "The operations"}, {"title": "Deletion, the three cases", "topic": "Ch 04", "url": "topics/04-bst.html#delete", "keywords": "Deletion, the three cases"}, {"title": "The successor, and why it works", "topic": "Ch 04", "url": "topics/04-bst.html#successor", "keywords": "The successor, and why it works"}, {"title": "The degenerate case", "topic": "Ch 04", "url": "topics/04-bst.html#degenerate", "keywords": "The degenerate case"}, {"title": "C implementation", "topic": "Ch 04", "url": "topics/04-bst.html#code", "keywords": "C implementation"}, {"title": "Python implementation", "topic": "Ch 04", "url": "topics/04-bst.html#python", "keywords": "Python implementation"}, {"title": "Common mistakes", "topic": "Ch 04", "url": "topics/04-bst.html#mistakes", "keywords": "Common mistakes"}, {"title": "Check your understanding", "topic": "Ch 04", "url": "topics/04-bst.html#check", "keywords": "Check your understanding"}, {"title": "Fixing the degenerate case", "topic": "Ch 05", "url": "topics/05-avl.html#why", "keywords": "Fixing the degenerate case"}, {"title": "The height bound, and why it matters", "topic": "Ch 05", "url": "topics/05-avl.html#heightbound", "keywords": "The height bound, and why it matters"}, {"title": "The four rotation cases", "topic": "Ch 05", "url": "topics/05-avl.html#rotations", "keywords": "The four rotation cases"}, {"title": "Insertion versus deletion", "topic": "Ch 05", "url": "topics/05-avl.html#insertdelete", "keywords": "Insertion versus deletion"}, {"title": "C implementation", "topic": "Ch 05", "url": "topics/05-avl.html#code", "keywords": "C implementation"}, {"title": "Complexity", "topic": "Ch 05", "url": "topics/05-avl.html#complexity", "keywords": "Complexity"}, {"title": "Check your understanding", "topic": "Ch 05", "url": "topics/05-avl.html#check", "keywords": "Check your understanding"}, {"title": "Giving up order to keep one fact", "topic": "Ch 06", "url": "topics/06-heaps.html#why", "keywords": "Giving up order to keep one fact"}, {"title": "The heap property and the array layout", "topic": "Ch 06", "url": "topics/06-heaps.html#property", "keywords": "The heap property and the array layout"}, {"title": "Operations", "topic": "Ch 06", "url": "topics/06-heaps.html#operations", "keywords": "Operations"}, {"title": "Worked trace — build-heap", "topic": "Ch 06", "url": "topics/06-heaps.html#trace", "keywords": "Worked trace — build-heap"}, {"title": "Insert and delete-max traces", "topic": "Ch 06", "url": "topics/06-heaps.html#insertdelete", "keywords": "Insert and delete-max traces"}, {"title": "Heapsort", "topic": "Ch 06", "url": "topics/06-heaps.html#heapsort", "keywords": "Heapsort"}, {"title": "Common mistakes", "topic": "Ch 06", "url": "topics/06-heaps.html#mistakes", "keywords": "Common mistakes"}, {"title": "Check your understanding", "topic": "Ch 06", "url": "topics/06-heaps.html#check", "keywords": "Check your understanding"}, {"title": "Dropping the no-cycles rule", "topic": "Ch 07", "url": "topics/07-graphs.html#why", "keywords": "Dropping the no-cycles rule"}, {"title": "Terminology", "topic": "Ch 07", "url": "topics/07-graphs.html#terminology", "keywords": "Terminology"}, {"title": "The two representations", "topic": "Ch 07", "url": "topics/07-graphs.html#representation", "keywords": "The two representations"}, {"title": "C implementation", "topic": "Ch 07", "url": "topics/07-graphs.html#code", "keywords": "C implementation"}, {"title": "Check your understanding", "topic": "Ch 07", "url": "topics/07-graphs.html#check", "keywords": "Check your understanding"}, {"title": "Exploring in rings", "topic": "Ch 08", "url": "topics/08-bfs.html#why", "keywords": "Exploring in rings"}, {"title": "Why BFS finds shortest paths", "topic": "Ch 08", "url": "topics/08-bfs.html#why-shortest", "keywords": "Why BFS finds shortest paths"}, {"title": "Worked trace", "topic": "Ch 08", "url": "topics/08-bfs.html#trace", "keywords": "Worked trace"}, {"title": "What BFS is used for", "topic": "Ch 08", "url": "topics/08-bfs.html#applications", "keywords": "What BFS is used for"}, {"title": "C and Python", "topic": "Ch 08", "url": "topics/08-bfs.html#code", "keywords": "C and Python"}, {"title": "Check your understanding", "topic": "Ch 08", "url": "topics/08-bfs.html#check", "keywords": "Check your understanding"}, {"title": "Going as deep as possible", "topic": "Ch 09", "url": "topics/09-dfs.html#why", "keywords": "Going as deep as possible"}, {"title": "Edge classification", "topic": "Ch 09", "url": "topics/09-dfs.html#edgeclass", "keywords": "Edge classification"}, {"title": "What DFS is used for", "topic": "Ch 09", "url": "topics/09-dfs.html#applications", "keywords": "What DFS is used for"}, {"title": "C and Python", "topic": "Ch 09", "url": "topics/09-dfs.html#code", "keywords": "C and Python"}, {"title": "Check your understanding", "topic": "Ch 09", "url": "topics/09-dfs.html#check", "keywords": "Check your understanding"}, {"title": "Connecting everything as cheaply as possible", "topic": "Ch 10", "url": "topics/10-mst.html#why", "keywords": "Connecting everything as cheaply as possible"}, {"title": "The cut property — why both algorithms work", "topic": "Ch 10", "url": "topics/10-mst.html#cut", "keywords": "The cut property — why both algorithms work"}, {"title": "Kruskal's algorithm", "topic": "Ch 10", "url": "topics/10-mst.html#kruskal", "keywords": "Kruskal's algorithm"}, {"title": "Prim's algorithm", "topic": "Ch 10", "url": "topics/10-mst.html#prim", "keywords": "Prim's algorithm"}, {"title": "The same graph by both methods", "topic": "Ch 10", "url": "topics/10-mst.html#trace", "keywords": "The same graph by both methods"}, {"title": "C implementation", "topic": "Ch 10", "url": "topics/10-mst.html#code", "keywords": "C implementation"}, {"title": "Common mistakes", "topic": "Ch 10", "url": "topics/10-mst.html#mistakes", "keywords": "Common mistakes"}, {"title": "Check your understanding", "topic": "Ch 10", "url": "topics/10-mst.html#check", "keywords": "Check your understanding"}];</script>
+<script src="../assets/app.js"></script>
+</body>
+</html>
