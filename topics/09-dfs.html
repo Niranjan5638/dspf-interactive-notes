@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>09 · Depth-First Search · DSPF</title>
+<meta name="description" content="Going deep with a stack: discovery and finish times, cycle detection and topological sort.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;0,6..72,700;1,6..72,400&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/style.css">
+<script>
+  window.MathJax = {
+    tex: { inlineMath: [['\\(', '\\)']], displayMath: [['\\[', '\\]']] },
+    options: { skipHtmlTags: ['script','noscript','style','textarea','pre','code'] }
+  };
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-c.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-python.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism.min.css">
+</head>
+<body data-page="topic-09-dfs">
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="../index.html">DSPF<span>.</span>Notes</a>
+    <nav class="topnav">
+      <a href="../index.html">Home</a>
+      <a href="../topics/01-complexity.html">Chapters</a>
+      <a href="../visualizers.html">Visualizers</a>
+      <a href="../practice.html">Practice</a>
+      <a href="../glossary.html">Glossary</a>
+    </nav>
+    <div class="searchbox">
+      <input id="search-input" type="search" placeholder="Search topics…  ( / )" autocomplete="off" aria-label="Search the textbook">
+      <div class="searchresults" id="search-results"></div>
+    </div>
+  </div>
+</header>
+<div class="shell">
+<nav class="sidebar" aria-label="Chapter navigation">
+<div class="side-group">Chapters</div>
+<a href="../topics/01-complexity.html" data-topic-id="topic-01-complexity">01 · Measuring Cost: Complexity and Asymptotic Notation</a>
+<a href="../topics/02-stacks-queues.html" data-topic-id="topic-02-stacks-queues">02 · Stacks, Queues and Linked Lists</a>
+<a href="../topics/03-trees.html" data-topic-id="topic-03-trees">03 · Trees and Traversals</a>
+<a href="../topics/04-bst.html" data-topic-id="topic-04-bst">04 · Binary Search Trees</a>
+<a href="../topics/05-avl.html" data-topic-id="topic-05-avl">05 · AVL Trees and Rotations</a>
+<a href="../topics/06-heaps.html" data-topic-id="topic-06-heaps">06 · Heaps and Heapsort</a>
+<a href="../topics/07-graphs.html" data-topic-id="topic-07-graphs">07 · Graphs: Terminology and Representation</a>
+<a href="../topics/08-bfs.html" data-topic-id="topic-08-bfs">08 · Breadth-First Search</a>
+<a href="../topics/09-dfs.html" data-topic-id="topic-09-dfs" class="active">09 · Depth-First Search</a>
+<a href="../topics/10-mst.html" data-topic-id="topic-10-mst">10 · Minimum Spanning Trees</a>
+<div class="side-group">Tools</div>
+<a href="../visualizers.html">Interactive Visualizers</a>
+<a href="../practice.html">Practice and Examination Questions</a>
+<a href="../glossary.html">Glossary</a>
+</nav>
+<main>
+<div class="kicker">Chapter 09</div>
+<h1>Depth-First Search</h1>
+<p class="lede">Going deep with a stack: discovery and finish times, cycle detection and topological sort.</p>
+<h2 id="why">Going as deep as possible</h2>
+
+<p>DFS follows one path until it dead-ends, then backtracks. It uses a <strong>stack</strong> — explicitly, or implicitly through recursion — and it produces far more structural information than BFS because it records when each vertex is entered and left.</p>
+
+<div class="codeblock">
+  <div class="codeblock-header"><span class="lang">Pseudocode</span><span class="file">DFS with timestamps</span></div>
+<pre><code class="language-c">time = 0
+
+DFS-VISIT(G, u):
+    time = time + 1;  disc[u] = time;  colour[u] = GREY
+    for each neighbour v of u:
+        if colour[v] == WHITE:
+            parent[v] = u
+            DFS-VISIT(G, v)
+    colour[u] = BLACK
+    time = time + 1;  fin[u] = time
+
+DFS(G):
+    for each vertex u: colour[u] = WHITE; parent[u] = nil
+    for each vertex u:
+        if colour[u] == WHITE: DFS-VISIT(G, u)</code></pre>
+</div>
+
+<p>Each vertex is entered once and each edge examined once, so the cost is <strong>\(O(V + E)\)</strong>. The recursion stack uses \(O(V)\) space in the worst case — a path graph.</p>
+
+<h2 id="edgeclass">Edge classification</h2>
+
+<div class="tablewrap"><table>
+<thead><tr><th>Edge type</th><th>Meaning</th><th>Implies</th></tr></thead>
+<tbody>
+<tr><td>Tree edge</td><td>Leads to an undiscovered (white) vertex</td><td>Part of the DFS forest</td></tr>
+<tr><td>Back edge</td><td>Leads to a grey vertex — an ancestor still on the stack</td><td><strong>A cycle exists</strong></td></tr>
+<tr><td>Forward edge</td><td>Leads to a black descendant (digraphs only)</td><td>—</td></tr>
+<tr><td>Cross edge</td><td>Leads to a black vertex in another subtree (digraphs only)</td><td>—</td></tr>
+</tbody></table></div>
+
+<p>In an <strong>undirected</strong> graph only tree and back edges exist. That is why cycle detection is a single comparison.</p>
+
+<div class="box example">
+<span class="box-label">Worked trace — DFS from vertex 1</span>
+<p>Same graph as chapter 8: 1–2, 1–3, 2–4, 2–5, 3–6, 3–7, 5–8. Neighbours taken in increasing order.</p>
+<div class="tablewrap"><table>
+<thead><tr><th>Vertex</th><th>disc</th><th>fin</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>1</td><td>16</td></tr>
+<tr><td>2</td><td>2</td><td>9</td></tr>
+<tr><td>4</td><td>3</td><td>4</td></tr>
+<tr><td>5</td><td>5</td><td>8</td></tr>
+<tr><td>8</td><td>6</td><td>7</td></tr>
+<tr><td>3</td><td>10</td><td>15</td></tr>
+<tr><td>6</td><td>11</td><td>12</td></tr>
+<tr><td>7</td><td>13</td><td>14</td></tr>
+</tbody></table></div>
+<p><strong>Visit order:</strong> 1, 2, 4, 5, 8, 3, 6, 7. <strong>DFS tree:</strong> (1,2) (2,4) (2,5) (5,8) (1,3) (3,6) (3,7).</p>
+<p>Compare with BFS on the same graph: the tree edges are identical here, but the visit order is completely different. BFS gave 1,2,3,4,5,6,7,8.</p>
+</div>
+
+<h2 id="applications">What DFS is used for</h2>
+
+<h3>Cycle detection</h3>
+<p><strong>Undirected:</strong> a back edge to a non-parent ancestor means a cycle. <strong>Directed:</strong> a back edge to a grey vertex means a cycle. BFS cannot do this cheaply because it does not track the recursion path.</p>
+
+<h3>Topological sort</h3>
+<p>A topological order of a DAG lists every vertex before all of its successors. Two methods: run DFS and output vertices in <strong>decreasing order of finish time</strong>, or repeatedly remove a vertex of in-degree zero (Kahn's algorithm). A topological order exists if and only if the graph is acyclic.</p>
+
+<div class="box example">
+<span class="box-label">Worked example — topological sort</span>
+<p>Edges 1→2, 1→3, 2→4, 3→4. In-degrees: 1:0, 2:1, 3:1, 4:2.</p>
+<p><strong>Kahn:</strong> remove 1 (only in-degree 0), then 2 and 3 become available. Removing them in either order gives 1, 2, 3, 4 or 1, 3, 2, 4. Both valid — the order is not unique.</p>
+<p><strong>DFS method:</strong> finishing times give 4 last, then 2, 3, 1. Reversing gives 1, 3, 2, 4.</p>
+</div>
+
+<h3>Strongly connected components</h3>
+<p>A digraph is strongly connected if there is a path both ways between every pair. Kosaraju's algorithm does two DFS passes — one on the graph, one on the reversed graph in decreasing finish-time order. Tarjan's does it in one pass with low-link values. Both are \(O(V + E)\).</p>
+
+<h3>2-edge-connected components</h3>
+<p>An edge is a <strong>bridge</strong> if removing it disconnects the graph. A graph is 2-edge-connected when it has no bridges. DFS detects them with low-link values: an edge (u, v) is a bridge when <code>low[v] &gt; disc[u]</code>.</p>
+
+<div class="box why">
+<span class="box-label">BFS or DFS?</span>
+<p>If you need the shortest number of edges, or the vertices near the source, use BFS. If you need structure — cycles, bridges, topological order, strong connectivity — use DFS. Both are \(O(V+E)\); the difference is what they remember.</p>
+</div>
+
+<h2 id="code">C and Python</h2>
+
+<div class="codeblock">
+  <div class="codeblock-header"><span class="lang">C</span><span class="file">dfs.c</span><button class="copy-btn">Copy</button></div>
+<pre><code class="language-c">#include &lt;stdio.h&gt;
+
+#define MAXV 100
+int adj[MAXV][MAXV], deg[MAXV], n;
+int colour[MAXV];        /* 0 = white, 1 = grey, 2 = black */
+int disc[MAXV], fin[MAXV], timer = 0;
+int has_cycle = 0;
+
+void dfs_visit(int u, int parent) {
+    colour[u] = 1;                       /* grey: on the stack */
+    disc[u] = ++timer;
+    for (int k = 0; k &lt; deg[u]; k++) {
+        int v = adj[u][k];
+        if (colour[v] == 0) {
+            dfs_visit(v, u);
+        } else if (v != parent &amp;&amp; colour[v] == 1) {
+            has_cycle = 1;               /* back edge to a grey vertex */
+        }
+    }
+    colour[u] = 2;                       /* black: finished */
+    fin[u] = ++timer;
+}
+
+void dfs(int s) {
+    for (int i = 0; i &lt; n; i++) { colour[i] = 0; disc[i] = fin[i] = 0; }
+    timer = 0; has_cycle = 0;
+    dfs_visit(s, -1);
+}
+
+int main(void) {
+    n = 5;
+    int edges[][2] = {{0,1},{0,2},{1,3},{1,4}};
+    for (int i = 0; i &lt; 4; i++) {
+        int u = edges[i][0], v = edges[i][1];
+        adj[u][deg[u]++] = v;
+        adj[v][deg[v]++] = u;
+    }
+    dfs(0);
+    for (int i = 0; i &lt; n; i++) printf("%d: disc %d fin %d\n", i, disc[i], fin[i]);
+    printf("cycle: %s\n", has_cycle ? "yes" : "no");
+    return 0;
+}</code></pre>
+</div>
+
+<div class="codeblock">
+  <div class="codeblock-header"><span class="lang">Python</span><span class="file">dfs.py</span><button class="copy-btn">Copy</button></div>
+<pre><code class="language-python">def dfs(adj, source):
+    """Iterative DFS with discovery and finish times. O(V + E)."""
+    disc, fin, parent = {}, {}, {}
+    timer = 0
+    stack = [(source, iter(adj.get(source, ())))]
+    disc[source] = timer = timer + 1
+    parent[source] = None
+
+    while stack:
+        u, it = stack[-1]
+        advanced = False
+        for v in it:
+            if v not in disc:
+                disc[v] = timer = timer + 1
+                parent[v] = u
+                stack.append((v, iter(adj.get(v, ()))))
+                advanced = True
+                break
+        if not advanced:
+            stack.pop()
+            fin[u] = timer = timer + 1
+    return disc, fin
+
+
+def topological_sort(adj, vertices):
+    """Kahn's algorithm. Returns None if the graph has a cycle."""
+    indeg = {v: 0 for v in vertices}
+    for u in vertices:
+        for v in adj.get(u, ()):
+            indeg[v] += 1
+    ready = [v for v in vertices if indeg[v] == 0]
+    order = []
+    while ready:
+        u = ready.pop()
+        order.append(u)
+        for v in adj.get(u, ()):
+            indeg[v] -= 1
+            if indeg[v] == 0:
+                ready.append(v)
+    return order if len(order) == len(vertices) else None
+
+
+def has_cycle_directed(adj, vertices):
+    """White/grey/black colouring. Grey neighbour = back edge = cycle."""
+    WHITE, GREY, BLACK = 0, 1, 2
+    colour = {v: WHITE for v in vertices}
+
+    def visit(u):
+        colour[u] = GREY
+        for v in adj.get(u, ()):
+            if colour[v] == GREY:
+                return True
+            if colour[v] == WHITE and visit(v):
+                return True
+        colour[u] = BLACK
+        return False
+
+    return any(colour[v] == WHITE and visit(v) for v in vertices)
+
+
+if __name__ == "__main__":
+    adj = {1: [2, 3], 2: [4, 5], 3: [6, 7], 5: [8]}
+    disc, fin = dfs(adj, 1)
+    print("disc:", dict(sorted(disc.items())))
+    print("fin :", dict(sorted(fin.items())))
+    dag = {1: [2, 3], 2: [4], 3: [4]}
+    print("topo:", topological_sort(dag, [1, 2, 3, 4]))   # [1, 3, 2, 4] or similar</code></pre>
+</div>
+
+<h2 id="check">Check your understanding</h2>
+
+<div class="quiz">
+  <div class="qtext">In an undirected graph, DFS encounters an edge to a vertex that is already visited and is not the parent. What does this prove?</div>
+  <div class="opts">
+    <button class="opt">The graph is disconnected</button>
+    <button class="opt" data-correct>The graph contains a cycle</button>
+    <button class="opt">The vertex has degree 1</button>
+    <button class="opt">Nothing — it happens in every graph</button>
+  </div>
+  <div class="fb">In an undirected graph, non-tree edges are always back edges to an ancestor. An ancestor is reachable from the current vertex, and the current vertex is reachable from the ancestor, so together they form a cycle.</div>
+</div>
+
+<div class="quiz">
+  <div class="qtext">A directed graph has a topological order. What must be true of it?</div>
+  <div class="opts">
+    <button class="opt">It is strongly connected</button>
+    <button class="opt">It has at least one vertex of in-degree 0 and one of out-degree 0</button>
+    <button class="opt" data-correct>It is acyclic</button>
+    <button class="opt">Every vertex has in-degree at least 1</button>
+  </div>
+  <div class="fb">A topological order exists if and only if the graph is acyclic — that is the definition of a DAG. A cycle would require some vertex to come before itself. It must have a source (in-degree 0) and a sink (out-degree 0), but those are consequences, not the definition.</div>
+</div>
+<nav class="pager" aria-label="Chapter navigation">
+<a href="../topics/08-bfs.html"><span class="dir">← Previous</span><span class="ttl">08 · Breadth-First Search</span></a>
+<a class="next" href="../topics/10-mst.html"><span class="dir">Next →</span><span class="ttl">10 · Minimum Spanning Trees</span></a>
+</nav>
+<footer style="margin-top:56px;padding-top:22px;border-top:1px solid var(--rule);font-size:13px;color:var(--ink-3)">
+  <p style="margin:0 0 6px"><strong style="color:var(--ink-2)">Data Structures and Programming Fundamentals</strong> — an interactive textbook built from the CS213/293 lecture series, with Cormen et al. and Balagurusamy as references.</p>
+  <p style="margin:0">Progress is saved in this browser only. <a href="../glossary.html">Glossary</a> · <a href="../practice.html">Practice</a> · <a href="../visualizers.html">Visualizers</a></p>
+</footer>
+</main>
+</div>
+<script>window.DSPF_SEARCH = [{"title": "01 · Measuring Cost: Complexity and Asymptotic Notation", "topic": "Chapter", "url": "topics/01-complexity.html", "keywords": "Big-O, asymptotic, growth rate, amortized, recurrence, complexity Why we compare algorithms by growth, and how to read O, Omega, Theta, o and omega."}, {"title": "02 · Stacks, Queues and Linked Lists", "topic": "Chapter", "url": "topics/02-stacks-queues.html", "keywords": "stack, queue, linked list, circular buffer, deque, LIFO, FIFO LIFO and FIFO containers, how they are built on arrays and pointers, and why the circular buffer exists."}, {"title": "03 · Trees and Traversals", "topic": "Chapter", "url": "topics/03-trees.html", "keywords": "tree, binary tree, preorder, inorder, postorder, level order, traversal Tree terminology, representations, and the four ways to walk a binary tree."}, {"title": "04 · Binary Search Trees", "topic": "Chapter", "url": "topics/04-bst.html", "keywords": "BST, binary search tree, insert, delete, successor, height Ordering a tree so search becomes logarithmic - and the degenerate case that breaks it."}, {"title": "05 · AVL Trees and Rotations", "topic": "Chapter", "url": "topics/05-avl.html", "keywords": "AVL, rotation, balance factor, LL, RR, LR, RL, height bound Restoring the balance invariant with four rotation cases, and why height is guaranteed logarithmic."}, {"title": "06 · Heaps and Heapsort", "topic": "Chapter", "url": "topics/06-heaps.html", "keywords": "heap, priority queue, heapify, build-heap, heapsort, sift Partial sorting in an array: priority queues, heapify, build-heap and heapsort."}, {"title": "07 · Graphs: Terminology and Representation", "topic": "Chapter", "url": "topics/07-graphs.html", "keywords": "graph, adjacency matrix, adjacency list, directed, degree, cycle Vertices, edges, paths and cycles, and the two ways to store a graph."}, {"title": "08 · Breadth-First Search", "topic": "Chapter", "url": "topics/08-bfs.html", "keywords": "BFS, breadth-first, queue, shortest path, connected components, bipartite, diameter Ring-by-ring exploration with a queue, shortest unweighted paths, components and bipartiteness."}, {"title": "09 · Depth-First Search", "topic": "Chapter", "url": "topics/09-dfs.html", "keywords": "DFS, depth-first, stack, topological sort, cycle, strongly connected, finish time Going deep with a stack: discovery and finish times, cycle detection and topological sort."}, {"title": "10 · Minimum Spanning Trees", "topic": "Chapter", "url": "topics/10-mst.html", "keywords": "MST, minimum spanning tree, Kruskal, Prim, union-find, cut property, greedy Kruskal, Prim and the cut property that makes both of them correct."}, {"title": "Interactive Visualizers", "topic": "Tool", "url": "visualizers.html", "keywords": "Drive the algorithms yourself: stack, queue, BST, heap, BFS/DFS and growth rates."}, {"title": "Practice and Examination Questions", "topic": "Tool", "url": "practice.html", "keywords": "Graded questions with full worked solutions, from recall to exam-hard."}, {"title": "Glossary", "topic": "Tool", "url": "glossary.html", "keywords": "Every term used in the course, defined in one line."}, {"title": "Why we need a way to measure cost", "topic": "Ch 01", "url": "topics/01-complexity.html#why", "keywords": "Why we need a way to measure cost"}, {"title": "Counting operations", "topic": "Ch 01", "url": "topics/01-complexity.html#counting", "keywords": "Counting operations"}, {"title": "The five notations", "topic": "Ch 01", "url": "topics/01-complexity.html#notation", "keywords": "The five notations"}, {"title": "The growth hierarchy", "topic": "Ch 01", "url": "topics/01-complexity.html#hierarchy", "keywords": "The growth hierarchy"}, {"title": "How to analyse a piece of code", "topic": "Ch 01", "url": "topics/01-complexity.html#analysis", "keywords": "How to analyse a piece of code"}, {"title": "Recurrences", "topic": "Ch 01", "url": "topics/01-complexity.html#recurrences", "keywords": "Recurrences"}, {"title": "Amortised analysis: the doubling array", "topic": "Ch 01", "url": "topics/01-complexity.html#amortized", "keywords": "Amortised analysis: the doubling array"}, {"title": "Space complexity", "topic": "Ch 01", "url": "topics/01-complexity.html#space", "keywords": "Space complexity"}, {"title": "C and Python implementations", "topic": "Ch 01", "url": "topics/01-complexity.html#code", "keywords": "C and Python implementations"}, {"title": "Common mistakes", "topic": "Ch 01", "url": "topics/01-complexity.html#mistakes", "keywords": "Common mistakes"}, {"title": "Check your understanding", "topic": "Ch 01", "url": "topics/01-complexity.html#check", "keywords": "Check your understanding"}, {"title": "Two ways to decide who goes next", "topic": "Ch 02", "url": "topics/02-stacks-queues.html#why", "keywords": "Two ways to decide who goes next"}, {"title": "Abstract data type versus implementation", "topic": "Ch 02", "url": "topics/02-stacks-queues.html#adt", "keywords": "Abstract data type versus implementation"}, {"title": "Implementations and their costs", "topic": "Ch 02", "url": "topics/02-stacks-queues.html#implementations", "keywords": "Implementations and their costs"}, {"title": "Linked lists", "topic": "Ch 02", "url": "topics/02-stacks-queues.html#linked", "keywords": "Linked lists"}, {"title": "C implementation", "topic": "Ch 02", "url": "topics/02-stacks-queues.html#code", "keywords": "C implementation"}, {"title": "Python implementation", "topic": "Ch 02", "url": "topics/02-stacks-queues.html#python", "keywords": "Python implementation"}, {"title": "Common mistakes", "topic": "Ch 02", "url": "topics/02-stacks-queues.html#mistakes", "keywords": "Common mistakes"}, {"title": "Check your understanding", "topic": "Ch 02", "url": "topics/02-stacks-queues.html#check", "keywords": "Check your understanding"}, {"title": "From a line to a hierarchy", "topic": "Ch 03", "url": "topics/03-trees.html#why", "keywords": "From a line to a hierarchy"}, {"title": "Terminology", "topic": "Ch 03", "url": "topics/03-trees.html#terminology", "keywords": "Terminology"}, {"title": "Counting facts worth memorising", "topic": "Ch 03", "url": "topics/03-trees.html#counting", "keywords": "Counting facts worth memorising"}, {"title": "Representing a binary tree", "topic": "Ch 03", "url": "topics/03-trees.html#representation", "keywords": "Representing a binary tree"}, {"title": "The four traversals", "topic": "Ch 03", "url": "topics/03-trees.html#traversals", "keywords": "The four traversals"}, {"title": "C implementation", "topic": "Ch 03", "url": "topics/03-trees.html#code", "keywords": "C implementation"}, {"title": "Python implementation", "topic": "Ch 03", "url": "topics/03-trees.html#python", "keywords": "Python implementation"}, {"title": "Complexity summary", "topic": "Ch 03", "url": "topics/03-trees.html#complexity", "keywords": "Complexity summary"}, {"title": "Check your understanding", "topic": "Ch 03", "url": "topics/03-trees.html#check", "keywords": "Check your understanding"}, {"title": "Adding order to a tree", "topic": "Ch 04", "url": "topics/04-bst.html#why", "keywords": "Adding order to a tree"}, {"title": "The operations", "topic": "Ch 04", "url": "topics/04-bst.html#operations", "keywords": "The operations"}, {"title": "Deletion, the three cases", "topic": "Ch 04", "url": "topics/04-bst.html#delete", "keywords": "Deletion, the three cases"}, {"title": "The successor, and why it works", "topic": "Ch 04", "url": "topics/04-bst.html#successor", "keywords": "The successor, and why it works"}, {"title": "The degenerate case", "topic": "Ch 04", "url": "topics/04-bst.html#degenerate", "keywords": "The degenerate case"}, {"title": "C implementation", "topic": "Ch 04", "url": "topics/04-bst.html#code", "keywords": "C implementation"}, {"title": "Python implementation", "topic": "Ch 04", "url": "topics/04-bst.html#python", "keywords": "Python implementation"}, {"title": "Common mistakes", "topic": "Ch 04", "url": "topics/04-bst.html#mistakes", "keywords": "Common mistakes"}, {"title": "Check your understanding", "topic": "Ch 04", "url": "topics/04-bst.html#check", "keywords": "Check your understanding"}, {"title": "Fixing the degenerate case", "topic": "Ch 05", "url": "topics/05-avl.html#why", "keywords": "Fixing the degenerate case"}, {"title": "The height bound, and why it matters", "topic": "Ch 05", "url": "topics/05-avl.html#heightbound", "keywords": "The height bound, and why it matters"}, {"title": "The four rotation cases", "topic": "Ch 05", "url": "topics/05-avl.html#rotations", "keywords": "The four rotation cases"}, {"title": "Insertion versus deletion", "topic": "Ch 05", "url": "topics/05-avl.html#insertdelete", "keywords": "Insertion versus deletion"}, {"title": "C implementation", "topic": "Ch 05", "url": "topics/05-avl.html#code", "keywords": "C implementation"}, {"title": "Complexity", "topic": "Ch 05", "url": "topics/05-avl.html#complexity", "keywords": "Complexity"}, {"title": "Check your understanding", "topic": "Ch 05", "url": "topics/05-avl.html#check", "keywords": "Check your understanding"}, {"title": "Giving up order to keep one fact", "topic": "Ch 06", "url": "topics/06-heaps.html#why", "keywords": "Giving up order to keep one fact"}, {"title": "The heap property and the array layout", "topic": "Ch 06", "url": "topics/06-heaps.html#property", "keywords": "The heap property and the array layout"}, {"title": "Operations", "topic": "Ch 06", "url": "topics/06-heaps.html#operations", "keywords": "Operations"}, {"title": "Worked trace — build-heap", "topic": "Ch 06", "url": "topics/06-heaps.html#trace", "keywords": "Worked trace — build-heap"}, {"title": "Insert and delete-max traces", "topic": "Ch 06", "url": "topics/06-heaps.html#insertdelete", "keywords": "Insert and delete-max traces"}, {"title": "Heapsort", "topic": "Ch 06", "url": "topics/06-heaps.html#heapsort", "keywords": "Heapsort"}, {"title": "Common mistakes", "topic": "Ch 06", "url": "topics/06-heaps.html#mistakes", "keywords": "Common mistakes"}, {"title": "Check your understanding", "topic": "Ch 06", "url": "topics/06-heaps.html#check", "keywords": "Check your understanding"}, {"title": "Dropping the no-cycles rule", "topic": "Ch 07", "url": "topics/07-graphs.html#why", "keywords": "Dropping the no-cycles rule"}, {"title": "Terminology", "topic": "Ch 07", "url": "topics/07-graphs.html#terminology", "keywords": "Terminology"}, {"title": "The two representations", "topic": "Ch 07", "url": "topics/07-graphs.html#representation", "keywords": "The two representations"}, {"title": "C implementation", "topic": "Ch 07", "url": "topics/07-graphs.html#code", "keywords": "C implementation"}, {"title": "Check your understanding", "topic": "Ch 07", "url": "topics/07-graphs.html#check", "keywords": "Check your understanding"}, {"title": "Exploring in rings", "topic": "Ch 08", "url": "topics/08-bfs.html#why", "keywords": "Exploring in rings"}, {"title": "Why BFS finds shortest paths", "topic": "Ch 08", "url": "topics/08-bfs.html#why-shortest", "keywords": "Why BFS finds shortest paths"}, {"title": "Worked trace", "topic": "Ch 08", "url": "topics/08-bfs.html#trace", "keywords": "Worked trace"}, {"title": "What BFS is used for", "topic": "Ch 08", "url": "topics/08-bfs.html#applications", "keywords": "What BFS is used for"}, {"title": "C and Python", "topic": "Ch 08", "url": "topics/08-bfs.html#code", "keywords": "C and Python"}, {"title": "Check your understanding", "topic": "Ch 08", "url": "topics/08-bfs.html#check", "keywords": "Check your understanding"}, {"title": "Going as deep as possible", "topic": "Ch 09", "url": "topics/09-dfs.html#why", "keywords": "Going as deep as possible"}, {"title": "Edge classification", "topic": "Ch 09", "url": "topics/09-dfs.html#edgeclass", "keywords": "Edge classification"}, {"title": "What DFS is used for", "topic": "Ch 09", "url": "topics/09-dfs.html#applications", "keywords": "What DFS is used for"}, {"title": "C and Python", "topic": "Ch 09", "url": "topics/09-dfs.html#code", "keywords": "C and Python"}, {"title": "Check your understanding", "topic": "Ch 09", "url": "topics/09-dfs.html#check", "keywords": "Check your understanding"}, {"title": "Connecting everything as cheaply as possible", "topic": "Ch 10", "url": "topics/10-mst.html#why", "keywords": "Connecting everything as cheaply as possible"}, {"title": "The cut property — why both algorithms work", "topic": "Ch 10", "url": "topics/10-mst.html#cut", "keywords": "The cut property — why both algorithms work"}, {"title": "Kruskal's algorithm", "topic": "Ch 10", "url": "topics/10-mst.html#kruskal", "keywords": "Kruskal's algorithm"}, {"title": "Prim's algorithm", "topic": "Ch 10", "url": "topics/10-mst.html#prim", "keywords": "Prim's algorithm"}, {"title": "The same graph by both methods", "topic": "Ch 10", "url": "topics/10-mst.html#trace", "keywords": "The same graph by both methods"}, {"title": "C implementation", "topic": "Ch 10", "url": "topics/10-mst.html#code", "keywords": "C implementation"}, {"title": "Common mistakes", "topic": "Ch 10", "url": "topics/10-mst.html#mistakes", "keywords": "Common mistakes"}, {"title": "Check your understanding", "topic": "Ch 10", "url": "topics/10-mst.html#check", "keywords": "Check your understanding"}];</script>
+<script src="../assets/app.js"></script>
+</body>
+</html>
