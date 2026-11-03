@@ -32,6 +32,55 @@
 <tr><td>Classic uses</td><td>Function calls, expression evaluation, undo, backtracking</td><td>Scheduling, buffering, level-order traversal</td></tr>
 </tbody></table></div>
 
+<h3>The operations in pseudocode</h3>
+<p>Both containers are described here in a representation-neutral way. The array version is shown because it is the one with a subtlety — the doubling in <code>PUSH</code> and the wrap-around in <code>ENQUEUE</code>. The linked version differs only in that the growth step disappears.</p>
+
+<div class="codeblock">
+  <div class="codeblock-header"><span class="lang">Pseudocode</span><span class="file">STACK</span></div>
+<pre><code class="language-c">PUSH(S, x):                       # array-backed, O(1) amortised
+    if S.size == S.capacity:
+        GROW(S)                   # allocate 2 x capacity, copy, free old
+    S.data[S.size] = x
+    S.size = S.size + 1
+
+POP(S):                           # O(1)
+    if S.size == 0: error "stack underflow"
+    S.size = S.size - 1
+    return S.data[S.size]
+
+TOP(S):                           # O(1), does not modify
+    if S.size == 0: error "stack underflow"
+    return S.data[S.size - 1]
+
+IS-EMPTY(S):
+    return S.size == 0</code></pre>
+</div>
+
+<div class="codeblock">
+  <div class="codeblock-header"><span class="lang">Pseudocode</span><span class="file">QUEUE (circular buffer)</span></div>
+<pre><code class="language-c">ENQUEUE(Q, x):                    # O(1)
+    if Q.count == Q.capacity: error "queue overflow"
+    Q.data[Q.rear] = x
+    Q.rear = (Q.rear + 1) mod Q.capacity     # wrap around
+    Q.count = Q.count + 1
+
+DEQUEUE(Q):                       # O(1)
+    if Q.count == 0: error "queue underflow"
+    x = Q.data[Q.front]
+    Q.front = (Q.front + 1) mod Q.capacity   # wrap around
+    Q.count = Q.count - 1
+    return x
+
+FRONT(Q):                         # O(1), does not modify
+    if Q.count == 0: error "queue underflow"
+    return Q.data[Q.front]</code></pre>
+</div>
+
+<div class="box warn">
+<span class="box-label">Why the count field is not optional</span>
+<p>Without it, <code>front == rear</code> describes both an empty queue and a full one. The three states are: empty when <code>count == 0</code>, full when <code>count == capacity</code>, and otherwise partially filled. Every circular-queue bug in student code traces back to omitting it and trying to infer fullness from the two indices alone.</p>
+</div>
+
 <h3>Why the circular queue exists</h3>
 
 <p>In a naive array queue you enqueue at the back and dequeue from the front. The front index marches forward while the back stays put, so the queue walks off the end of the array even though most of it is empty. Shifting every element left after each dequeue costs \(O(n)\) and defeats the purpose.</p>
