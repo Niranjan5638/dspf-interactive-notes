@@ -137,6 +137,36 @@
 <p>For an undirected graph each edge appears twice in the list, so the total is \(V + 2E\).</p>
 </div>
 
+<h3>Building a representation in pseudocode</h3>
+<p>A graph is given to you either as an edge list or as an adjacency structure, and converting between them is the first thing every traversal assumes has already happened. Both directions are worth knowing.</p>
+
+<div class="codeblock">
+  <div class="codeblock-header"><span class="lang">Pseudocode</span><span class="file">ADJACENCY LIST</span></div>
+<pre><code class="language-c">BUILD-ADJACENCY-LIST(V, E, directed):     # O(V + E)
+    adj = array of V empty lists
+    for each edge (u, v) in E:
+        append v to adj[u]
+        if not directed:
+            append u to adj[v]            # undirected: both directions
+    return adj
+
+ADD-EDGE(adj, u, v):                      # O(1)
+    prepend v to adj[u]                   # order within a list is irrelevant
+    if undirected: prepend u to adj[v]
+
+BUILD-ADJACENCY-MATRIX(V, E):             # O(V^2) space
+    M = V x V array, all zeros
+    for each edge (u, v) in E:
+        M[u][v] = 1
+        if undirected: M[v][u] = 1
+    return M</code></pre>
+</div>
+
+<div class="box why">
+<span class="box-label">The two lookups, side by side</span>
+<p>Given an adjacency list, testing whether the edge <code>(u, v)</code> exists means scanning <code>adj[u]</code> — cost <code>O(deg(u))</code>. Given a matrix it is a single array access — <code>O(1)</code>. The trade is the other way round when you enumerate neighbours: the list touches only real neighbours, <code>O(deg(u))</code>, while the matrix must scan a whole row of length <code>V</code>. That asymmetry is why every traversal in the next three chapters is written for lists.</p>
+</div>
+
 <h2 id="code">C implementation</h2>
 
 <div class="codeblock">
