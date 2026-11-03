@@ -63,8 +63,9 @@ python3 build.py
 
 ## Features
 
+- **Pseudocode for every algorithm** — each chapter gives representation-neutral pseudocode before the C and Python implementations, with complexity annotated on each procedure.
 - **Search** — press `/` or click the box. Indexes chapter titles and every section heading.
-- **Progress tracking** — chapters you visit are marked read, stored in `localStorage`, shown on the home dashboard and in the sidebar.
+- **Progress tracking** — each chapter has a *Mark this chapter complete* checkbox; state is stored in `localStorage` and reflected on the dashboard, in the sidebar and on the home cards. A reset control clears it.
 - **Six visualizers** — stack/queue operations, BST construction, heap insert and extract, BFS/DFS on a graph, growth-rate explorer, and a live quiz engine.
 - **Copy buttons** on every code block.
 - **Light and dark themes** driven by `prefers-color-scheme`.
