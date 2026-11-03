@@ -1,0 +1,279 @@
+<!--TOPIC:04-bst|Binary Search Trees|-->
+<h2 id="why">Adding order to a tree</h2>
+
+<p>Chapter 3's tree lets you visit every node, but finding one still requires visiting everything. A <strong>binary search tree</strong> adds a single rule that turns the tree into an ordered map with logarithmic search — provided the tree stays balanced, which is chapter 5's problem.</p>
+
+<div class="box def">
+<span class="box-label">Definition — BST property</span>
+<p>For every node \(x\): every key in the left subtree of \(x\) is less than \(x\)'s key, and every key in the right subtree is greater. Duplicates are either forbidden or handled by a fixed convention (keep a count, or always go right).</p>
+</div>
+
+<p>Three consequences follow immediately, and they are the ones to state in an exam: an <strong>inorder traversal yields the keys in sorted order</strong>; the <strong>minimum is the leftmost node</strong>; and the <strong>maximum is the rightmost</strong>.</p>
+
+<h2 id="operations">The operations</h2>
+
+<div class="tablewrap"><table>
+<thead><tr><th>Operation</th><th>How</th><th>Cost</th></tr></thead>
+<tbody>
+<tr><td>Search</td><td>Compare at the root; go left if smaller, right if larger</td><td>\(O(h)\)</td></tr>
+<tr><td>Insert</td><td>Search to a null child, attach the new key there</td><td>\(O(h)\)</td></tr>
+<tr><td>Minimum / maximum</td><td>Follow left / right pointers to the end</td><td>\(O(h)\)</td></tr>
+<tr><td>Successor</td><td>Right subtree's minimum, or climb until you come up from a left child</td><td>\(O(h)\)</td></tr>
+<tr><td>Delete</td><td>Three cases — see below</td><td>\(O(h)\)</td></tr>
+</tbody></table></div>
+
+<p>Everything is \(O(h)\), not \(O(\log n)\). The two are the same only when the tree is balanced, and that distinction is the whole point of the chapter.</p>
+
+<h2 id="delete">Deletion, the three cases</h2>
+
+<ol>
+<li><strong>Leaf.</strong> Remove it. The parent's pointer becomes null.</li>
+<li><strong>One child.</strong> Splice the child into the node's place. The parent now points at the grandchild.</li>
+<li><strong>Two children.</strong> Replace the node's key with its <strong>inorder successor</strong> — the minimum of the right subtree — then delete that successor. By construction the successor has no left child, so it falls into case 1 or 2.</li>
+</ol>
+
+<div class="box example">
+<span class="box-label">Worked example — deleting a two-child node</span>
+<p>Tree: 50 with left 30 (children 20, 40) and right 70 (children 60, 80). Delete 50.</p>
+<p>The inorder successor of 50 is the minimum of its right subtree: 60. Copy 60 into the root, then delete 60 from the right subtree. Node 60 was a leaf, so this is case 1. Result: root 60, left 30 (20, 40), right 70 (—, 80).</p>
+<p>The tree is still a valid BST, and inorder still reads 20 30 40 60 70 80.</p>
+</div>
+
+<h2 id="successor">The successor, and why it works</h2>
+
+<p>To find the successor of a key \(k\): if \(k\)'s right subtree is non-empty, the successor is its minimum. Otherwise the successor is the lowest ancestor whose left subtree contains \(k\) — found by climbing while you are the right child.</p>
+
+<div class="box example">
+<span class="box-label">Worked example — both branches</span>
+<p>In the tree above (after deletion: root 60, left 30 with children 20 and 40, right 70 with child 80):</p>
+<ul>
+<li>Successor of 30: right subtree exists, its minimum is 40. Answer 40.</li>
+<li>Successor of 40: no right subtree, so climb — 40 is a right child of 30, continue; 30 is a left child of 60, stop. Answer 60.</li>
+<li>Successor of 80: no right subtree; 80 is a right child of 70, 70 is a right child of 60, 60 has no parent. Answer: none, 80 is the maximum.</li>
+</ul>
+</div>
+
+<h2 id="degenerate">The degenerate case</h2>
+
+<p>Insert 10, 20, 30, 40, 50 in that order. Every new key is larger than everything before it, so it always goes to the right. The result is a chain of height 4 with five nodes: search is now \(O(n)\), and the tree has degenerated into a linked list.</p>
+
+<p>The same five keys inserted in the order 30, 20, 40, 10, 50 give a balanced tree of height 2. <strong>The shape depends entirely on insertion order</strong>, which is why the average case (\(O(\log n)\) for random order) and the worst case (\(O(n)\)) are so far apart.</p>
+
+<div class="box why">
+<span class="box-label">Why this motivates AVL</span>
+<p>Every BST operation costs \(O(h)\). The structure is only useful when \(h = O(\log n)\), and nothing in the BST definition guarantees that. Chapter 5 adds an invariant that does — at the cost of some rebalancing work on insert and delete.</p>
+</div>
+
+<h2 id="code">C implementation</h2>
+
+<div class="codeblock">
+  <div class="codeblock-header"><span class="lang">C</span><span class="file">bst.c</span><button class="copy-btn">Copy</button></div>
+<pre><code class="language-c">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+
+typedef struct Node {
+    int key;
+    struct Node *left, *right;
+} Node;
+
+Node *node_new(int k) {
+    Node *n = malloc(sizeof *n);
+    if (!n) return NULL;
+    n-&gt;key = k; n-&gt;left = n-&gt;right = NULL;
+    return n;
+}
+
+/* O(h) */
+Node *bst_search(Node *t, int k) {
+    while (t &amp;&amp; t-&gt;key != k)
+        t = (k &lt; t-&gt;key) ? t-&gt;left : t-&gt;right;
+    return t;
+}
+
+/* O(h): walk down to a null child and attach */
+Node *bst_insert(Node *t, int k) {
+    if (!t) return node_new(k);
+    if (k &lt; t-&gt;key)      t-&gt;left  = bst_insert(t-&gt;left,  k);
+    else if (k &gt; t-&gt;key) t-&gt;right = bst_insert(t-&gt;right, k);
+    return t;                       /* duplicates ignored */
+}
+
+Node *bst_min(Node *t) {
+    if (!t) return NULL;
+    while (t-&gt;left) t = t-&gt;left;
+    return t;
+}
+
+/* successor: right subtree's min, else lowest ancestor we came up from the left */
+Node *bst_successor(Node *root, int k) {
+    Node *succ = NULL, *t = root;
+    while (t &amp;&amp; t-&gt;key != k) {
+        if (k &lt; t-&gt;key) { succ = t; t = t-&gt;left; }
+        else            { t = t-&gt;right; }
+    }
+    if (!t) return NULL;
+    if (t-&gt;right) return bst_min(t-&gt;right);
+    return succ;
+}
+
+/* O(h) - the three cases */
+Node *bst_delete(Node *t, int k) {
+    if (!t) return NULL;
+    if (k &lt; t-&gt;key)      { t-&gt;left  = bst_delete(t-&gt;left,  k); return t; }
+    if (k &gt; t-&gt;key)      { t-&gt;right = bst_delete(t-&gt;right, k); return t; }
+
+    if (!t-&gt;left)  { Node *r = t-&gt;right; free(t); return r; }   /* case 1/2 */
+    if (!t-&gt;right) { Node *l = t-&gt;left;  free(t); return l; }   /* case 2   */
+    Node *s = bst_min(t-&gt;right);                                /* case 3   */
+    t-&gt;key = s-&gt;key;
+    t-&gt;right = bst_delete(t-&gt;right, s-&gt;key);
+    return t;
+}
+
+void inorder(const Node *t) {
+    if (!t) return;
+    inorder(t-&gt;left); printf("%d ", t-&gt;key); inorder(t-&gt;right);
+}
+
+int main(void) {
+    Node *root = NULL;
+    int keys[] = {50, 30, 70, 20, 40, 60, 80};
+    for (int i = 0; i &lt; 7; i++) root = bst_insert(root, keys[i]);
+    inorder(root); printf("\n");                 /* 20 30 40 50 60 70 80 */
+    printf("succ(40) = %d\n", bst_successor(root, 40)-&gt;key);   /* 50 */
+    root = bst_delete(root, 50);
+    inorder(root); printf("\n");                 /* 20 30 40 60 70 80 */
+    return 0;
+}</code></pre>
+</div>
+
+<h2 id="python">Python implementation</h2>
+
+<div class="codeblock">
+  <div class="codeblock-header"><span class="lang">Python</span><span class="file">bst.py</span><button class="copy-btn">Copy</button></div>
+<pre><code class="language-python">class Node:
+    __slots__ = ("key", "left", "right")
+    def __init__(self, key):
+        self.key = key
+        self.left = self.right = None
+
+
+class BST:
+    def __init__(self):
+        self.root = None
+
+    def insert(self, key):
+        """O(h). Iterative, so no recursion limit."""
+        if self.root is None:
+            self.root = Node(key)
+            return
+        cur = self.root
+        while True:
+            if key < cur.key:
+                if cur.left is None:
+                    cur.left = Node(key)
+                    return
+                cur = cur.left
+            elif key > cur.key:
+                if cur.right is None:
+                    cur.right = Node(key)
+                    return
+                cur = cur.right
+            else:
+                return                       # duplicate
+
+    def search(self, key):
+        cur = self.root
+        while cur and cur.key != key:
+            cur = cur.left if key < cur.key else cur.right
+        return cur
+
+    def inorder(self):
+        out, stack, cur = [], [], self.root
+        while stack or cur:                  # explicit stack, O(h) space
+            while cur:
+                stack.append(cur)
+                cur = cur.left
+            cur = stack.pop()
+            out.append(cur.key)
+            cur = cur.right
+        return out
+
+    def delete(self, key):
+        def _del(node, k):
+            if node is None:
+                return None
+            if k < node.key:
+                node.left = _del(node.left, k)
+            elif k > node.key:
+                node.right = _del(node.right, k)
+            else:
+                if node.left is None:
+                    return node.right
+                if node.right is None:
+                    return node.left
+                succ = node.right
+                while succ.left:
+                    succ = succ.left
+                node.key = succ.key
+                node.right = _del(node.right, succ.key)
+            return node
+        self.root = _del(self.root, key)
+
+
+if __name__ == "__main__":
+    t = BST()
+    for k in (50, 30, 70, 20, 40, 60, 80):
+        t.insert(k)
+    print(t.inorder())      # [20, 30, 40, 50, 60, 70, 80]
+    t.delete(50)
+    print(t.inorder())      # [20, 30, 40, 60, 70, 80]</code></pre>
+</div>
+
+<div class="viz" id="viz-bst">
+  <div class="viz-head">
+    <h3>Build a BST</h3>
+    <div class="viz-controls">
+      <input type="number" data-bst="value" placeholder="key" aria-label="Key" style="width:70px">
+      <button data-bst="insert">Insert</button>
+      <button data-bst="random">Random</button>
+      <button data-bst="clear">Clear</button>
+    </div>
+  </div>
+  <div class="viz-stage"></div>
+  <div class="viz-log"></div>
+</div>
+
+<h2 id="mistakes">Common mistakes</h2>
+
+<ol>
+<li><strong>Deleting a two-child node by promoting the left child.</strong> That breaks the ordering. The successor (or predecessor) is the only safe replacement.</li>
+<li><strong>Assuming search is \(O(\log n)\) always.</strong> It is \(O(h)\), and \(h\) can be \(n-1\).</li>
+<li><strong>Forgetting to update the parent's pointer</strong> when deleting the root.</li>
+<li><strong>Comparing only with the parent during search</strong> instead of walking from the root.</li>
+<li><strong>Allowing duplicates silently.</strong> Choose a convention and state it.</li>
+</ol>
+
+<h2 id="check">Check your understanding</h2>
+
+<div class="quiz">
+  <div class="qtext">Keys 1, 2, 3, 4, 5 are inserted into an empty BST in that order. What is the height of the resulting tree?</div>
+  <div class="opts">
+    <button class="opt">2</button>
+    <button class="opt" data-correct>4</button>
+    <button class="opt">5</button>
+    <button class="opt">3</button>
+  </div>
+  <div class="fb">Each key is larger than all previous ones, so each becomes a right child of the previous — a chain of 5 nodes. Height in edges is 5 − 1 = 4. This is the degenerate case; search is now O(n).</div>
+</div>
+
+<div class="quiz">
+  <div class="qtext">What is the inorder successor of a node with a non-empty right subtree?</div>
+  <div class="opts">
+    <button class="opt">Its parent</button>
+    <button class="opt">The maximum of its left subtree</button>
+    <button class="opt" data-correct>The minimum of its right subtree</button>
+    <button class="opt">The root</button>
+  </div>
+  <div class="fb">Everything in the right subtree is greater than the node, and the smallest of those is the next key in sorted order. Following left pointers to the end of the right subtree finds it in O(h).</div>
+</div>
