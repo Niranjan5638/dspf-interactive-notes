@@ -181,6 +181,56 @@ for (int i = 0; i &lt; n; i++)
 })();
 </script>
 
+<h3>Binary search in pseudocode</h3>
+<p>Lecture 1 includes binary search as its worked example of logarithmic growth, in both iterative and recursive form. It is the cleanest illustration of the recurrence <code>T(n) = T(n/2) + 1</code>, so it belongs here rather than in a later chapter.</p>
+
+<div class="codeblock">
+  <div class="codeblock-header"><span class="lang">Pseudocode</span><span class="file">BINARY SEARCH — ITERATIVE</span></div>
+<pre><code class="language-c">BINARY-SEARCH(A, n, key):         # A sorted ascending, O(log n)
+    lo = 0
+    hi = n - 1
+    while lo &lt;= hi:
+        mid = lo + floor((hi - lo) / 2)     # avoids lo+hi overflow
+        if A[mid] == key: return mid
+        else if A[mid] &lt; key: lo = mid + 1
+        else:                 hi = mid - 1
+    return NOT-FOUND</code></pre>
+</div>
+
+<div class="codeblock">
+  <div class="codeblock-header"><span class="lang">Pseudocode</span><span class="file">BINARY SEARCH — RECURSIVE</span></div>
+<pre><code class="language-c">BINARY-SEARCH-REC(A, lo, hi, key):
+    if lo &gt; hi: return NOT-FOUND              # base case: empty range
+    mid = lo + floor((hi - lo) / 2)
+    if A[mid] == key: return mid
+    if A[mid] &lt; key:  return BINARY-SEARCH-REC(A, mid + 1, hi, key)
+    else:             return BINARY-SEARCH-REC(A, lo, mid - 1, key)</code></pre>
+</div>
+
+<div class="box example">
+<span class="box-label">Worked example — searching 23 in a 10-element array</span>
+<p>Array: 2, 5, 8, 12, 16, 23, 38, 56, 72, 91 (indices 0 to 9). Target 23.</p>
+<div class="tablewrap"><table>
+<thead><tr><th>Step</th><th>lo</th><th>hi</th><th>mid</th><th>A[mid]</th><th>Action</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>0</td><td>9</td><td>4</td><td>16</td><td>16 &lt; 23, so lo = 5</td></tr>
+<tr><td>2</td><td>5</td><td>9</td><td>7</td><td>56</td><td>56 &gt; 23, so hi = 6</td></tr>
+<tr><td>3</td><td>5</td><td>6</td><td>5</td><td>23</td><td>found at index 5</td></tr>
+</tbody></table></div>
+<p>Three comparisons for ten elements. Linear search would have taken six.</p>
+</div>
+
+<div class="box why">
+<span class="box-label">Why the recurrence is T(n) = T(n/2) + 1</span>
+<p>Each call does a constant amount of work — one comparison and one arithmetic step — and then recurses on <em>half</em> the array. Expanding: \(T(n) = T(n/2) + 1 = T(n/4) + 2 = \cdots = T(n/2^k) + k\). The recursion bottoms out when \(n/2^k = 1\), so \(k = \log_2 n\) and \(T(n) = \Theta(\log n)\). The space cost differs between the two forms: the iterative version is \(O(1)\), the recursive one \(O(\log n)\) for the call stack.</p>
+</div>
+
+<div class="box warn">
+<span class="box-label">Two implementation traps</span>
+<p><strong>Overflow.</strong> Writing <code>mid = (lo + hi) / 2</code> overflows a 32-bit int when both indices are near <code>INT_MAX</code>. The form <code>lo + (hi - lo) / 2</code> is equivalent and safe — this is a famous bug that lived in the Java standard library for nine years.</p>
+<p><strong>Off-by-one.</strong> The loop condition must be <code>lo &lt;= hi</code>, not <code>lo &lt; hi</code>, or the last single-element range is never examined and the search fails on an array of size 1.</p>
+</div>
+
 <h2 id="analysis">How to analyse a piece of code</h2>
 
 <ol>
