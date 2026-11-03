@@ -46,6 +46,67 @@
 <tr><td><code>heapsort</code></td><td>build-heap, then repeatedly swap root with last and sift down</td><td>\(O(n \log n)\)</td></tr>
 </tbody></table></div>
 
+<h3>The operations in pseudocode</h3>
+<p>Everything is written for a 0-indexed array, which is what the C and Python code below use. If a question uses 1-based indexing, the child formulas become <code>2i</code> and <code>2i+1</code> and the parent becomes <code>floor(i/2)</code> — check which convention is in play before writing anything.</p>
+
+<div class="codeblock">
+  <div class="codeblock-header"><span class="lang">Pseudocode</span><span class="file">INDEX ARITHMETIC AND SIFTING</span></div>
+<pre><code class="language-c">PARENT(i) = floor((i - 1) / 2)     # 0-indexed
+LEFT(i)   = 2 * i + 1
+RIGHT(i)  = 2 * i + 2
+
+SIFT-DOWN(A, n, i):               # restore heap from a too-small root, O(log n)
+    while true:
+        l = LEFT(i);  r = RIGHT(i);  big = i
+        if l &lt; n and A[l] &gt; A[big]: big = l
+        if r &lt; n and A[r] &gt; A[big]: big = r
+        if big == i: return        # parent already dominates both children
+        swap A[i], A[big]
+        i = big                    # follow the hole downward
+
+SIFT-UP(A, i):                    # restore heap after appending at the end, O(log n)
+    while i &gt; 0:
+        p = PARENT(i)
+        if A[p] &gt;= A[i]: return
+        swap A[p], A[i]
+        i = p                      # follow the hole upward</code></pre>
+</div>
+
+<div class="codeblock">
+  <div class="codeblock-header"><span class="lang">Pseudocode</span><span class="file">PRIORITY QUEUE OPERATIONS</span></div>
+<pre><code class="language-c">HEAP-MAXIMUM(A):                  # O(1)
+    if A is empty: error "empty heap"
+    return A[0]
+
+HEAP-INSERT(A, x):                # O(log n)
+    A.length = A.length + 1
+    A[A.length - 1] = x
+    SIFT-UP(A, A.length - 1)
+
+HEAP-EXTRACT-MAX(A):              # O(log n)
+    if A is empty: error "empty heap"
+    max = A[0]
+    A[0] = A[A.length - 1]         # move last leaf to the root
+    A.length = A.length - 1
+    if A.length &gt; 0: SIFT-DOWN(A, A.length, 0)
+    return max
+
+BUILD-HEAP(A):                    # O(n), NOT O(n log n)
+    for i = floor(A.length / 2) - 1 down to 0:
+        SIFT-DOWN(A, A.length, i)  # start at the last internal node
+
+HEAPSORT(A):                      # O(n log n) time, O(1) extra space
+    BUILD-HEAP(A)
+    for end = A.length - 1 down to 1:
+        swap A[0], A[end]          # largest goes to its final position
+        SIFT-DOWN(A, end, 0)       # heap is now the prefix A[0 .. end-1]</code></pre>
+</div>
+
+<div class="box why">
+<span class="box-label">The one line that explains build-heap's cost</span>
+<p>The loop starts at <code>floor(n/2) - 1</code>, not at 0 — that is the last node that actually has children. Every node after it is a leaf and needs no work. Combined with the fact that a node of height <code>k</code> costs only <code>k</code> to sift and there are very few tall nodes, the total is linear. Starting the loop at 0 instead would add <code>n/2</code> wasted calls but would not change the asymptotics.</p>
+</div>
+
 <h2 id="trace">Worked trace — build-heap</h2>
 
 <div class="box example">
