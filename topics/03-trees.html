@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>03 · Trees and Traversals · DSPF</title>
+<meta name="description" content="Tree terminology, representations, and the four ways to walk a binary tree.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;0,6..72,700;1,6..72,400&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/style.css">
+<script>
+  window.MathJax = {
+    tex: { inlineMath: [['\\(', '\\)']], displayMath: [['\\[', '\\]']] },
+    options: { skipHtmlTags: ['script','noscript','style','textarea','pre','code'] }
+  };
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-c.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-python.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism.min.css">
+</head>
+<body data-page="topic-03-trees">
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="../index.html">DSPF<span>.</span>Notes</a>
+    <nav class="topnav">
+      <a href="../index.html">Home</a>
+      <a href="../topics/01-complexity.html">Chapters</a>
+      <a href="../visualizers.html">Visualizers</a>
+      <a href="../practice.html">Practice</a>
+      <a href="../glossary.html">Glossary</a>
+    </nav>
+    <div class="searchbox">
+      <input id="search-input" type="search" placeholder="Search topics…  ( / )" autocomplete="off" aria-label="Search the textbook">
+      <div class="searchresults" id="search-results"></div>
+    </div>
+  </div>
+</header>
+<div class="shell">
+<nav class="sidebar" aria-label="Chapter navigation">
+<div class="side-group">Chapters</div>
+<a href="../topics/01-complexity.html" data-topic-id="topic-01-complexity">01 · Measuring Cost: Complexity and Asymptotic Notation</a>
+<a href="../topics/02-stacks-queues.html" data-topic-id="topic-02-stacks-queues">02 · Stacks, Queues and Linked Lists</a>
+<a href="../topics/03-trees.html" data-topic-id="topic-03-trees" class="active">03 · Trees and Traversals</a>
+<a href="../topics/04-bst.html" data-topic-id="topic-04-bst">04 · Binary Search Trees</a>
+<a href="../topics/05-avl.html" data-topic-id="topic-05-avl">05 · AVL Trees and Rotations</a>
+<a href="../topics/06-heaps.html" data-topic-id="topic-06-heaps">06 · Heaps and Heapsort</a>
+<a href="../topics/07-graphs.html" data-topic-id="topic-07-graphs">07 · Graphs: Terminology and Representation</a>
+<a href="../topics/08-bfs.html" data-topic-id="topic-08-bfs">08 · Breadth-First Search</a>
+<a href="../topics/09-dfs.html" data-topic-id="topic-09-dfs">09 · Depth-First Search</a>
+<a href="../topics/10-mst.html" data-topic-id="topic-10-mst">10 · Minimum Spanning Trees</a>
+<div class="side-group">Tools</div>
+<a href="../visualizers.html">Interactive Visualizers</a>
+<a href="../practice.html">Practice and Examination Questions</a>
+<a href="../glossary.html">Glossary</a>
+</nav>
+<main>
+<div class="kicker">Chapter 03</div>
+<h1>Trees and Traversals</h1>
+<p class="lede">Tree terminology, representations, and the four ways to walk a binary tree.</p>
+<h2 id="why">From a line to a hierarchy</h2>
+
+<p>A linked list is a line: each node has one successor. That linearity is exactly what makes search \(O(n)\) — to find the last element you must walk past every earlier one. A <strong>tree</strong> relaxes the constraint to allow more than one successor, and with two successors per node the number of elements reachable in \(h\) steps grows like \(2^h\). That is where the speed comes from, and chapter 4 exploits it.</p>
+
+<div class="box def">
+<span class="box-label">Definition — tree</span>
+<p>A tree is either (a) a single node, or (b) a node called the <strong>root</strong> connected to zero or more disjoint subtrees. Equivalently, in graph terms, a tree is a connected acyclic graph. The two definitions are equivalent, and the course uses both — chapter 7 revisits the second.</p>
+</div>
+
+<h2 id="terminology">Terminology</h2>
+
+<div class="tablewrap"><table>
+<thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>Root</td><td>The unique node with no parent</td></tr>
+<tr><td>Leaf (external node)</td><td>A node with no children</td></tr>
+<tr><td>Internal node</td><td>A node with at least one child</td></tr>
+<tr><td>Depth of a node</td><td>Number of edges from the root down to it</td></tr>
+<tr><td>Height of a node</td><td>Longest path in edges from it down to a leaf</td></tr>
+<tr><td>Height of the tree</td><td>The height of the root</td></tr>
+<tr><td>Degree</td><td>Number of children of a node</td></tr>
+<tr><td>Level</td><td>All nodes at the same depth</td></tr>
+</tbody></table></div>
+
+<div class="box warn">
+<span class="box-label">Exam trap</span>
+<p>Height is measured in <strong>edges</strong>, not nodes, in this course. A single node has height 0 and depth 0. Mixing the two conventions is the most common source of off-by-one errors in AVL questions.</p>
+</div>
+
+<h2 id="counting">Counting facts worth memorising</h2>
+
+<ul>
+<li>A binary tree of height \(h\) has at most \(2^{h+1} - 1\) nodes.</li>
+<li>A binary tree with \(n\) nodes has height at least \(\lfloor \log_2 n \rfloor\).</li>
+<li>A <strong>full</strong> binary tree with \(L\) leaves has exactly \(2L - 1\) nodes.</li>
+<li>The number of nodes at depth \(d\) in a perfect tree is \(2^d\).</li>
+</ul>
+
+<div class="box example">
+<span class="box-label">Worked example — why height is logarithmic</span>
+<p>A binary tree of height \(h\) has at most \(1 + 2 + 4 + \cdots + 2^h = 2^{h+1} - 1\) nodes. If it holds \(n\) nodes then \(n \le 2^{h+1} - 1\), so \(h \ge \log_2(n+1) - 1 = \Omega(\log n)\).</p>
+<p>This is a <em>lower</em> bound on height for a given \(n\). The upper bound is unbounded — a chain of \(n\) nodes has height \(n-1\). Chapter 5 fixes that.</p>
+</div>
+
+<h2 id="representation">Representing a binary tree</h2>
+
+<div class="tablewrap"><table>
+<thead><tr><th>Representation</th><th>How</th><th>Cost</th></tr></thead>
+<tbody>
+<tr><td>Array (heap style)</td><td>Node at index \(i\) has children \(2i+1\) and \(2i+2\), parent \(\lfloor (i-1)/2 \rfloor\)</td><td>\(O(1)\) navigation, but wastes space on sparse trees</td></tr>
+<tr><td>Linked</td><td>Each node holds a value and two pointers</td><td>Exactly \(O(n)\) space, \(O(1)\) child access</td></tr>
+</tbody></table></div>
+
+<p>The array form only makes sense for <strong>complete</strong> trees — those filled level by level from the left — because otherwise the indices leave gaps. Chapter 6 uses it for heaps, where completeness is part of the invariant.</p>
+
+<h2 id="traversals">The four traversals</h2>
+
+<p>A traversal is a systematic order in which to visit every node exactly once. The three depth-first orders differ only in <em>when</em> the node itself is visited relative to its subtrees.</p>
+
+<div class="tablewrap"><table>
+<thead><tr><th>Traversal</th><th>Order</th><th>Typical use</th></tr></thead>
+<tbody>
+<tr><td>Preorder</td><td>node, left, right</td><td>Copy a tree; produce a prefix expression</td></tr>
+<tr><td>Inorder</td><td>left, node, right</td><td>Sorted output from a BST — the reason BSTs are useful</td></tr>
+<tr><td>Postorder</td><td>left, right, node</td><td>Delete a tree; evaluate a postfix expression</td></tr>
+<tr><td>Level order</td><td>by depth, left to right (uses a queue)</td><td>Breadth-first over a tree</td></tr>
+</tbody></table></div>
+
+<div class="box example">
+<span class="box-label">Worked example — all four orders on one tree</span>
+<p>Root 4, with left child 2 (children 1 and 3) and right child 6 (children 5 and 7).</p>
+<div class="tablewrap"><table>
+<thead><tr><th>Order</th><th>Sequence</th></tr></thead>
+<tbody>
+<tr><td>Preorder</td><td>4 2 1 3 6 5 7</td></tr>
+<tr><td>Inorder</td><td>1 2 3 4 5 6 7</td></tr>
+<tr><td>Postorder</td><td>1 3 2 5 7 6 4</td></tr>
+<tr><td>Level order</td><td>4 2 6 1 3 5 7</td></tr>
+</tbody></table></div>
+<p>Notice that inorder is sorted. That is not a coincidence — this tree happens to be a BST, and chapter 4 makes the connection precise.</p>
+</div>
+
+<h2 id="code">C implementation</h2>
+
+<div class="codeblock">
+  <div class="codeblock-header"><span class="lang">C</span><span class="file">tree.c</span><button class="copy-btn">Copy</button></div>
+<pre><code class="language-c">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+
+typedef struct Node {
+    int value;
+    struct Node *left, *right;
+} Node;
+
+Node *node_new(int v) {
+    Node *n = malloc(sizeof *n);
+    if (!n) return NULL;
+    n-&gt;value = v; n-&gt;left = n-&gt;right = NULL;
+    return n;
+}
+
+/* height in edges; a leaf has height 0, an empty tree -1 */
+int height(const Node *n) {
+    if (!n) return -1;
+    int l = height(n-&gt;left), r = height(n-&gt;right);
+    return 1 + (l &gt; r ? l : r);
+}
+
+int count(const Node *n) {
+    return n ? 1 + count(n-&gt;left) + count(n-&gt;right) : 0;
+}
+
+void preorder(const Node *n)  { if (!n) return; printf("%d ", n-&gt;value); preorder(n-&gt;left);  preorder(n-&gt;right); }
+void inorder(const Node *n)   { if (!n) return; inorder(n-&gt;left);  printf("%d ", n-&gt;value);   inorder(n-&gt;right);  }
+void postorder(const Node *n) { if (!n) return; postorder(n-&gt;left); postorder(n-&gt;right); printf("%d ", n-&gt;value); }
+
+/* postorder is the safe way to free: children before parent */
+void tree_free(Node *n) {
+    if (!n) return;
+    tree_free(n-&gt;left);
+    tree_free(n-&gt;right);
+    free(n);
+}
+
+int main(void) {
+    /*        4
+             / \
+            2   6
+           / \ / \
+          1  3 5  7   */
+    Node *root = node_new(4);
+    root-&gt;left = node_new(2);  root-&gt;right = node_new(6);
+    root-&gt;left-&gt;left = node_new(1);  root-&gt;left-&gt;right = node_new(3);
+    root-&gt;right-&gt;left = node_new(5); root-&gt;right-&gt;right = node_new(7);
+
+    printf("height %d, nodes %d\n", height(root), count(root));
+    printf("pre   "); preorder(root);  printf("\n");
+    printf("in    "); inorder(root);   printf("\n");
+    printf("post  "); postorder(root); printf("\n");
+    tree_free(root);
+    return 0;
+}
+/* output:
+   height 2, nodes 7
+   pre   4 2 1 3 6 5 7
+   in    1 2 3 4 5 6 7
+   post  1 3 2 5 7 6 4        */</code></pre>
+</div>
+
+<h2 id="python">Python implementation</h2>
+
+<div class="codeblock">
+  <div class="codeblock-header"><span class="lang">Python</span><span class="file">tree.py</span><button class="copy-btn">Copy</button></div>
+<pre><code class="language-python">from collections import deque
+
+
+class Node:
+    __slots__ = ("value", "left", "right")
+    def __init__(self, value, left=None, right=None):
+        self.value = value
+        self.left = left
+        self.right = right
+
+
+def height(node):
+    """Height in edges; a leaf is 0, an empty tree is -1."""
+    if node is None:
+        return -1
+    return 1 + max(height(node.left), height(node.right))
+
+
+def preorder(node, out):
+    if node is None:
+        return
+    out.append(node.value)
+    preorder(node.left, out)
+    preorder(node.right, out)
+
+
+def inorder(node, out):
+    if node is None:
+        return
+    inorder(node.left, out)
+    out.append(node.value)
+    inorder(node.right, out)
+
+
+def postorder(node, out):
+    if node is None:
+        return
+    postorder(node.left, out)
+    postorder(node.right, out)
+    out.append(node.value)
+
+
+def level_order(root):
+    """Breadth-first: a queue of nodes, not a recursion."""
+    if root is None:
+        return []
+    out, q = [], deque([root])
+    while q:
+        node = q.popleft()
+        out.append(node.value)
+        if node.left:
+            q.append(node.left)
+        if node.right:
+            q.append(node.right)
+    return out
+
+
+if __name__ == "__main__":
+    root = Node(4,
+                Node(2, Node(1), Node(3)),
+                Node(6, Node(5), Node(7)))
+    print("height:", height(root))
+    for name, fn in (("pre", preorder), ("in", inorder), ("post", postorder)):
+        out = []
+        fn(root, out)
+        print(name, out)
+    print("level", level_order(root))</code></pre>
+</div>
+
+<div class="box warn">
+<span class="box-label">Recursion depth</span>
+<p>All three depth-first traversals are \(O(n)\) time but \(O(h)\) stack space. On a degenerate tree — a chain — that is \(O(n)\) frames. Python's default recursion limit is 1000, so a chain of 2000 nodes raises <code>RecursionError</code>. C has no such limit but will overflow the stack around a few hundred thousand frames. Level order avoids this entirely by using an explicit queue.</p>
+</div>
+
+<h2 id="complexity">Complexity summary</h2>
+
+<div class="tablewrap"><table>
+<thead><tr><th>Operation</th><th>Time</th><th>Space</th></tr></thead>
+<tbody>
+<tr><td>Any depth-first traversal</td><td>\(O(n)\)</td><td>\(O(h)\) stack</td></tr>
+<tr><td>Level-order traversal</td><td>\(O(n)\)</td><td>\(O(w)\) where w is the widest level</td></tr>
+<tr><td>Height / count</td><td>\(O(n)\)</td><td>\(O(h)\) stack</td></tr>
+<tr><td>Free the tree</td><td>\(O(n)\)</td><td>\(O(h)\) stack</td></tr>
+</tbody></table></div>
+
+<h2 id="check">Check your understanding</h2>
+
+<div class="quiz">
+  <div class="qtext">A binary tree has 31 nodes and is perfect (every level completely filled). What is its height in edges?</div>
+  <div class="opts">
+    <button class="opt">31</button>
+    <button class="opt">5</button>
+    <button class="opt" data-correct>4</button>
+    <button class="opt">15</button>
+  </div>
+  <div class="fb">A perfect tree of height h has 2^(h+1) − 1 nodes. Setting 2^(h+1) − 1 = 31 gives 2^(h+1) = 32, so h + 1 = 5 and h = 4. Five is the number of <em>levels</em>, which is the off-by-one trap.</div>
+</div>
+
+<div class="quiz">
+  <div class="qtext">Which traversal should you use to free every node of a tree safely?</div>
+  <div class="opts">
+    <button class="opt">Preorder — parent first</button>
+    <button class="opt">Inorder</button>
+    <button class="opt" data-correct>Postorder — children before parent</button>
+    <button class="opt">Level order</button>
+  </div>
+  <div class="fb">You must free a node's children before the node itself, or you lose the pointers to them and leak the subtree. Postorder visits both subtrees before the node, which is exactly the order required.</div>
+</div>
+<nav class="pager" aria-label="Chapter navigation">
+<a href="../topics/02-stacks-queues.html"><span class="dir">← Previous</span><span class="ttl">02 · Stacks, Queues and Linked Lists</span></a>
+<a class="next" href="../topics/04-bst.html"><span class="dir">Next →</span><span class="ttl">04 · Binary Search Trees</span></a>
+</nav>
+<footer style="margin-top:56px;padding-top:22px;border-top:1px solid var(--rule);font-size:13px;color:var(--ink-3)">
+  <p style="margin:0 0 6px"><strong style="color:var(--ink-2)">Data Structures and Programming Fundamentals</strong> — an interactive textbook built from the CS213/293 lecture series, with Cormen et al. and Balagurusamy as references.</p>
+  <p style="margin:0">Progress is saved in this browser only. <a href="../glossary.html">Glossary</a> · <a href="../practice.html">Practice</a> · <a href="../visualizers.html">Visualizers</a></p>
+</footer>
+</main>
+</div>
+<script>window.DSPF_SEARCH = [{"title": "01 · Measuring Cost: Complexity and Asymptotic Notation", "topic": "Chapter", "url": "topics/01-complexity.html", "keywords": "Big-O, asymptotic, growth rate, amortized, recurrence, complexity Why we compare algorithms by growth, and how to read O, Omega, Theta, o and omega."}, {"title": "02 · Stacks, Queues and Linked Lists", "topic": "Chapter", "url": "topics/02-stacks-queues.html", "keywords": "stack, queue, linked list, circular buffer, deque, LIFO, FIFO LIFO and FIFO containers, how they are built on arrays and pointers, and why the circular buffer exists."}, {"title": "03 · Trees and Traversals", "topic": "Chapter", "url": "topics/03-trees.html", "keywords": "tree, binary tree, preorder, inorder, postorder, level order, traversal Tree terminology, representations, and the four ways to walk a binary tree."}, {"title": "04 · Binary Search Trees", "topic": "Chapter", "url": "topics/04-bst.html", "keywords": "BST, binary search tree, insert, delete, successor, height Ordering a tree so search becomes logarithmic - and the degenerate case that breaks it."}, {"title": "05 · AVL Trees and Rotations", "topic": "Chapter", "url": "topics/05-avl.html", "keywords": "AVL, rotation, balance factor, LL, RR, LR, RL, height bound Restoring the balance invariant with four rotation cases, and why height is guaranteed logarithmic."}, {"title": "06 · Heaps and Heapsort", "topic": "Chapter", "url": "topics/06-heaps.html", "keywords": "heap, priority queue, heapify, build-heap, heapsort, sift Partial sorting in an array: priority queues, heapify, build-heap and heapsort."}, {"title": "07 · Graphs: Terminology and Representation", "topic": "Chapter", "url": "topics/07-graphs.html", "keywords": "graph, adjacency matrix, adjacency list, directed, degree, cycle Vertices, edges, paths and cycles, and the two ways to store a graph."}, {"title": "08 · Breadth-First Search", "topic": "Chapter", "url": "topics/08-bfs.html", "keywords": "BFS, breadth-first, queue, shortest path, connected components, bipartite, diameter Ring-by-ring exploration with a queue, shortest unweighted paths, components and bipartiteness."}, {"title": "09 · Depth-First Search", "topic": "Chapter", "url": "topics/09-dfs.html", "keywords": "DFS, depth-first, stack, topological sort, cycle, strongly connected, finish time Going deep with a stack: discovery and finish times, cycle detection and topological sort."}, {"title": "10 · Minimum Spanning Trees", "topic": "Chapter", "url": "topics/10-mst.html", "keywords": "MST, minimum spanning tree, Kruskal, Prim, union-find, cut property, greedy Kruskal, Prim and the cut property that makes both of them correct."}, {"title": "Interactive Visualizers", "topic": "Tool", "url": "visualizers.html", "keywords": "Drive the algorithms yourself: stack, queue, BST, heap, BFS/DFS and growth rates."}, {"title": "Practice and Examination Questions", "topic": "Tool", "url": "practice.html", "keywords": "Graded questions with full worked solutions, from recall to exam-hard."}, {"title": "Glossary", "topic": "Tool", "url": "glossary.html", "keywords": "Every term used in the course, defined in one line."}, {"title": "Why we need a way to measure cost", "topic": "Ch 01", "url": "topics/01-complexity.html#why", "keywords": "Why we need a way to measure cost"}, {"title": "Counting operations", "topic": "Ch 01", "url": "topics/01-complexity.html#counting", "keywords": "Counting operations"}, {"title": "The five notations", "topic": "Ch 01", "url": "topics/01-complexity.html#notation", "keywords": "The five notations"}, {"title": "The growth hierarchy", "topic": "Ch 01", "url": "topics/01-complexity.html#hierarchy", "keywords": "The growth hierarchy"}, {"title": "How to analyse a piece of code", "topic": "Ch 01", "url": "topics/01-complexity.html#analysis", "keywords": "How to analyse a piece of code"}, {"title": "Recurrences", "topic": "Ch 01", "url": "topics/01-complexity.html#recurrences", "keywords": "Recurrences"}, {"title": "Amortised analysis: the doubling array", "topic": "Ch 01", "url": "topics/01-complexity.html#amortized", "keywords": "Amortised analysis: the doubling array"}, {"title": "Space complexity", "topic": "Ch 01", "url": "topics/01-complexity.html#space", "keywords": "Space complexity"}, {"title": "C and Python implementations", "topic": "Ch 01", "url": "topics/01-complexity.html#code", "keywords": "C and Python implementations"}, {"title": "Common mistakes", "topic": "Ch 01", "url": "topics/01-complexity.html#mistakes", "keywords": "Common mistakes"}, {"title": "Check your understanding", "topic": "Ch 01", "url": "topics/01-complexity.html#check", "keywords": "Check your understanding"}, {"title": "Two ways to decide who goes next", "topic": "Ch 02", "url": "topics/02-stacks-queues.html#why", "keywords": "Two ways to decide who goes next"}, {"title": "Abstract data type versus implementation", "topic": "Ch 02", "url": "topics/02-stacks-queues.html#adt", "keywords": "Abstract data type versus implementation"}, {"title": "Implementations and their costs", "topic": "Ch 02", "url": "topics/02-stacks-queues.html#implementations", "keywords": "Implementations and their costs"}, {"title": "Linked lists", "topic": "Ch 02", "url": "topics/02-stacks-queues.html#linked", "keywords": "Linked lists"}, {"title": "C implementation", "topic": "Ch 02", "url": "topics/02-stacks-queues.html#code", "keywords": "C implementation"}, {"title": "Python implementation", "topic": "Ch 02", "url": "topics/02-stacks-queues.html#python", "keywords": "Python implementation"}, {"title": "Common mistakes", "topic": "Ch 02", "url": "topics/02-stacks-queues.html#mistakes", "keywords": "Common mistakes"}, {"title": "Check your understanding", "topic": "Ch 02", "url": "topics/02-stacks-queues.html#check", "keywords": "Check your understanding"}, {"title": "From a line to a hierarchy", "topic": "Ch 03", "url": "topics/03-trees.html#why", "keywords": "From a line to a hierarchy"}, {"title": "Terminology", "topic": "Ch 03", "url": "topics/03-trees.html#terminology", "keywords": "Terminology"}, {"title": "Counting facts worth memorising", "topic": "Ch 03", "url": "topics/03-trees.html#counting", "keywords": "Counting facts worth memorising"}, {"title": "Representing a binary tree", "topic": "Ch 03", "url": "topics/03-trees.html#representation", "keywords": "Representing a binary tree"}, {"title": "The four traversals", "topic": "Ch 03", "url": "topics/03-trees.html#traversals", "keywords": "The four traversals"}, {"title": "C implementation", "topic": "Ch 03", "url": "topics/03-trees.html#code", "keywords": "C implementation"}, {"title": "Python implementation", "topic": "Ch 03", "url": "topics/03-trees.html#python", "keywords": "Python implementation"}, {"title": "Complexity summary", "topic": "Ch 03", "url": "topics/03-trees.html#complexity", "keywords": "Complexity summary"}, {"title": "Check your understanding", "topic": "Ch 03", "url": "topics/03-trees.html#check", "keywords": "Check your understanding"}, {"title": "Adding order to a tree", "topic": "Ch 04", "url": "topics/04-bst.html#why", "keywords": "Adding order to a tree"}, {"title": "The operations", "topic": "Ch 04", "url": "topics/04-bst.html#operations", "keywords": "The operations"}, {"title": "Deletion, the three cases", "topic": "Ch 04", "url": "topics/04-bst.html#delete", "keywords": "Deletion, the three cases"}, {"title": "The successor, and why it works", "topic": "Ch 04", "url": "topics/04-bst.html#successor", "keywords": "The successor, and why it works"}, {"title": "The degenerate case", "topic": "Ch 04", "url": "topics/04-bst.html#degenerate", "keywords": "The degenerate case"}, {"title": "C implementation", "topic": "Ch 04", "url": "topics/04-bst.html#code", "keywords": "C implementation"}, {"title": "Python implementation", "topic": "Ch 04", "url": "topics/04-bst.html#python", "keywords": "Python implementation"}, {"title": "Common mistakes", "topic": "Ch 04", "url": "topics/04-bst.html#mistakes", "keywords": "Common mistakes"}, {"title": "Check your understanding", "topic": "Ch 04", "url": "topics/04-bst.html#check", "keywords": "Check your understanding"}, {"title": "Fixing the degenerate case", "topic": "Ch 05", "url": "topics/05-avl.html#why", "keywords": "Fixing the degenerate case"}, {"title": "The height bound, and why it matters", "topic": "Ch 05", "url": "topics/05-avl.html#heightbound", "keywords": "The height bound, and why it matters"}, {"title": "The four rotation cases", "topic": "Ch 05", "url": "topics/05-avl.html#rotations", "keywords": "The four rotation cases"}, {"title": "Insertion versus deletion", "topic": "Ch 05", "url": "topics/05-avl.html#insertdelete", "keywords": "Insertion versus deletion"}, {"title": "C implementation", "topic": "Ch 05", "url": "topics/05-avl.html#code", "keywords": "C implementation"}, {"title": "Complexity", "topic": "Ch 05", "url": "topics/05-avl.html#complexity", "keywords": "Complexity"}, {"title": "Check your understanding", "topic": "Ch 05", "url": "topics/05-avl.html#check", "keywords": "Check your understanding"}, {"title": "Giving up order to keep one fact", "topic": "Ch 06", "url": "topics/06-heaps.html#why", "keywords": "Giving up order to keep one fact"}, {"title": "The heap property and the array layout", "topic": "Ch 06", "url": "topics/06-heaps.html#property", "keywords": "The heap property and the array layout"}, {"title": "Operations", "topic": "Ch 06", "url": "topics/06-heaps.html#operations", "keywords": "Operations"}, {"title": "Worked trace — build-heap", "topic": "Ch 06", "url": "topics/06-heaps.html#trace", "keywords": "Worked trace — build-heap"}, {"title": "Insert and delete-max traces", "topic": "Ch 06", "url": "topics/06-heaps.html#insertdelete", "keywords": "Insert and delete-max traces"}, {"title": "Heapsort", "topic": "Ch 06", "url": "topics/06-heaps.html#heapsort", "keywords": "Heapsort"}, {"title": "Common mistakes", "topic": "Ch 06", "url": "topics/06-heaps.html#mistakes", "keywords": "Common mistakes"}, {"title": "Check your understanding", "topic": "Ch 06", "url": "topics/06-heaps.html#check", "keywords": "Check your understanding"}, {"title": "Dropping the no-cycles rule", "topic": "Ch 07", "url": "topics/07-graphs.html#why", "keywords": "Dropping the no-cycles rule"}, {"title": "Terminology", "topic": "Ch 07", "url": "topics/07-graphs.html#terminology", "keywords": "Terminology"}, {"title": "The two representations", "topic": "Ch 07", "url": "topics/07-graphs.html#representation", "keywords": "The two representations"}, {"title": "C implementation", "topic": "Ch 07", "url": "topics/07-graphs.html#code", "keywords": "C implementation"}, {"title": "Check your understanding", "topic": "Ch 07", "url": "topics/07-graphs.html#check", "keywords": "Check your understanding"}, {"title": "Exploring in rings", "topic": "Ch 08", "url": "topics/08-bfs.html#why", "keywords": "Exploring in rings"}, {"title": "Why BFS finds shortest paths", "topic": "Ch 08", "url": "topics/08-bfs.html#why-shortest", "keywords": "Why BFS finds shortest paths"}, {"title": "Worked trace", "topic": "Ch 08", "url": "topics/08-bfs.html#trace", "keywords": "Worked trace"}, {"title": "What BFS is used for", "topic": "Ch 08", "url": "topics/08-bfs.html#applications", "keywords": "What BFS is used for"}, {"title": "C and Python", "topic": "Ch 08", "url": "topics/08-bfs.html#code", "keywords": "C and Python"}, {"title": "Check your understanding", "topic": "Ch 08", "url": "topics/08-bfs.html#check", "keywords": "Check your understanding"}, {"title": "Going as deep as possible", "topic": "Ch 09", "url": "topics/09-dfs.html#why", "keywords": "Going as deep as possible"}, {"title": "Edge classification", "topic": "Ch 09", "url": "topics/09-dfs.html#edgeclass", "keywords": "Edge classification"}, {"title": "What DFS is used for", "topic": "Ch 09", "url": "topics/09-dfs.html#applications", "keywords": "What DFS is used for"}, {"title": "C and Python", "topic": "Ch 09", "url": "topics/09-dfs.html#code", "keywords": "C and Python"}, {"title": "Check your understanding", "topic": "Ch 09", "url": "topics/09-dfs.html#check", "keywords": "Check your understanding"}, {"title": "Connecting everything as cheaply as possible", "topic": "Ch 10", "url": "topics/10-mst.html#why", "keywords": "Connecting everything as cheaply as possible"}, {"title": "The cut property — why both algorithms work", "topic": "Ch 10", "url": "topics/10-mst.html#cut", "keywords": "The cut property — why both algorithms work"}, {"title": "Kruskal's algorithm", "topic": "Ch 10", "url": "topics/10-mst.html#kruskal", "keywords": "Kruskal's algorithm"}, {"title": "Prim's algorithm", "topic": "Ch 10", "url": "topics/10-mst.html#prim", "keywords": "Prim's algorithm"}, {"title": "The same graph by both methods", "topic": "Ch 10", "url": "topics/10-mst.html#trace", "keywords": "The same graph by both methods"}, {"title": "C implementation", "topic": "Ch 10", "url": "topics/10-mst.html#code", "keywords": "C implementation"}, {"title": "Common mistakes", "topic": "Ch 10", "url": "topics/10-mst.html#mistakes", "keywords": "Common mistakes"}, {"title": "Check your understanding", "topic": "Ch 10", "url": "topics/10-mst.html#check", "keywords": "Check your understanding"}];</script>
+<script src="../assets/app.js"></script>
+</body>
+</html>
