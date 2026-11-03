@@ -1,0 +1,388 @@
+<!--TOPIC:visualizers|Interactive Visualizers|-->
+<p>Every visualizer below is live. Use the controls to step forward and back, or press play and change the speed. Each one logs what is happening in the panel underneath, so you can read the algorithm's reasoning as it runs rather than just watching shapes move.</p>
+
+<h2 id="growth">Growth rates</h2>
+<p>Drag the slider to change \(n\) and watch how the operation counts separate. The bars are drawn on a logarithmic scale so that all seven remain visible — which is itself the point: on a linear scale, \(2^n\) would flatten everything else to nothing.</p>
+
+<div class="viz" id="viz-growth">
+  <div class="viz-head">
+    <h3>Growth-rate explorer</h3>
+    <div class="viz-controls">
+      <label style="font-size:12.5px;color:var(--ink-3)">n = <output id="gr-out">10</output></label>
+      <input type="range" data-gr="n" min="1" max="60" value="10" style="width:200px" aria-label="Input size n">
+    </div>
+  </div>
+  <div class="viz-stage"></div>
+  <div class="viz-log"></div>
+</div>
+
+<h2 id="stackqueue">Stack and queue</h2>
+<p>Push and pop to see LIFO; enqueue and dequeue to see FIFO. The log names which element moves and why.</p>
+
+<div class="viz" id="viz-stack">
+  <div class="viz-head">
+    <h3>Stack and queue</h3>
+    <div class="viz-controls">
+      <input type="number" data-viz="value" placeholder="value" aria-label="Value" style="width:74px">
+      <button data-act="push">push</button>
+      <button data-act="pop">pop</button>
+      <button data-act="enqueue">enqueue</button>
+      <button data-act="dequeue">dequeue</button>
+      <button data-act="switch">Switch to queue</button>
+    </div>
+  </div>
+  <div class="viz-stage"></div>
+  <div class="viz-log"></div>
+</div>
+
+<h2 id="bst">Binary search tree</h2>
+<p>Insert keys and watch the shape form. The log shows the inorder traversal, which is always sorted — the property that makes a BST an ordered map. Insert 10, 20, 30, 40, 50 in that order and watch it degenerate into a chain.</p>
+
+<div class="viz" id="viz-bst">
+  <div class="viz-head">
+    <h3>Build a BST</h3>
+    <div class="viz-controls">
+      <input type="number" data-bst="value" placeholder="key" aria-label="Key" style="width:70px">
+      <button data-bst="insert">Insert</button>
+      <button data-bst="random">Random</button>
+      <button data-bst="clear">Clear</button>
+    </div>
+  </div>
+  <div class="viz-stage"></div>
+  <div class="viz-log"></div>
+</div>
+
+<h2 id="heap">Heap</h2>
+<p>Insert values and watch them sift up; extract the maximum and watch the last leaf move to the root and sift down. The index labels under each cell are the array positions — parent of <code>i</code> is <code>floor((i-1)/2)</code>.</p>
+
+<div class="viz" id="viz-heap">
+  <div class="viz-head">
+    <h3>Max-heap</h3>
+    <div class="viz-controls">
+      <input type="number" data-heap="value" placeholder="value" aria-label="Value" style="width:74px">
+      <button data-heap="insert">Insert</button>
+      <button data-heap="extract">Extract max</button>
+      <button data-heap="build">Build [4,10,3,5,1]</button>
+      <button data-heap="clear">Clear</button>
+    </div>
+  </div>
+  <div class="viz-stage"></div>
+  <div class="viz-log"></div>
+</div>
+
+<h2 id="graph">BFS and DFS</h2>
+<p>The same graph, both traversals. Green vertices are finished, red is the vertex being processed, and blue is the current frontier. Switch between BFS and DFS and watch the frontier change from a queue to a stack — and the visit order change with it.</p>
+
+<div class="viz" id="viz-graph">
+  <div class="viz-head">
+    <h3>Graph traversal</h3>
+    <div class="viz-controls">
+      <button data-g="mode" data-mode="bfs">BFS</button>
+      <button data-g="mode" data-mode="dfs">DFS</button>
+      <button data-g="prev">← Step</button>
+      <button data-g="next">Step →</button>
+      <button data-g="reset">Reset</button>
+    </div>
+  </div>
+  <div class="viz-stage"></div>
+  <div class="viz-log"></div>
+</div>
+
+<h2 id="offline">A note on dependencies</h2>
+<p>The visualizers are plain JavaScript with no library — they run offline once the page is cached. The only external dependencies on this site are Google Fonts (typography), MathJax (equations) and Prism (syntax highlighting). If any of them fails to load, the page still works: text falls back to system fonts, equations degrade to readable notation, and code appears unstyled but correctly.</p>
+
+<!--TOPIC:practice|Practice and Examination Questions|-->
+<p>Questions are grouped by chapter and graded. Every one has a full worked solution behind the disclosure triangle — open it only after attempting the question on paper. The <span class="pill">recall</span> questions test whether you know the definitions; <span class="pill">applied</span> questions test whether you can execute; <span class="pill supp">exam-hard</span> questions test whether you can reason.</p>
+
+<h2 id="p1">Chapter 1 — Complexity</h2>
+
+<details>
+<summary><span class="pill">recall</span> State the formal definition of \(f(n) = O(g(n))\) and explain what \(n_0\) is for.</summary>
+<div class="details-body">
+<p>\(f(n) = O(g(n))\) if there exist positive constants \(c\) and \(n_0\) such that \(f(n) \le c\,g(n)\) for all \(n \ge n_0\).</p>
+<p>\(n_0\) is the threshold beyond which the bound holds. Asymptotic notation describes behaviour <em>eventually</em>, so a function may exceed the bound for small inputs and still be \(O(g)\). Without \(n_0\) the definition would fail for almost every real algorithm, because lower-order terms dominate at small \(n\).</p>
+</div>
+</details>
+
+<details>
+<summary><span class="pill">applied</span> Give the tight bound for: <code>for (i = n; i &gt; 0; i /= 3) for (j = 0; j &lt; n; j++) work();</code></summary>
+<div class="details-body">
+<p>The outer loop divides by 3 each time, so it runs \(\lceil \log_3 n \rceil\) times. The inner loop runs \(n\) times, independently. Total \(n \log_3 n\), which is \(\Theta(n \log n)\) since the base of the logarithm is a constant factor.</p>
+<p>Common wrong answer: \(O(n^2)\), from assuming the outer loop is \(O(n)\).</p>
+</div>
+</details>
+
+<details>
+<summary><span class="pill supp">exam-hard</span> Prove that \(n^2\) is <em>not</em> \(O(n)\).</summary>
+<div class="details-body">
+<p>Suppose it were. Then there exist \(c &gt; 0\) and \(n_0\) with \(n^2 \le c\,n\) for all \(n \ge n_0\). Divide both sides by \(n\) (positive for \(n \ge n_0 \ge 1\)): \(n \le c\) for all \(n \ge n_0\).</p>
+<p>But \(n\) grows without bound, so choose any \(n &gt; \max(c, n_0)\) and the inequality fails. Contradiction, so no such \(c\) exists. ∎</p>
+</div>
+</details>
+
+<h2 id="p2">Chapter 2 — Stacks, queues and linked lists</h2>
+
+<details>
+<summary><span class="pill">applied</span> A circular queue of capacity 6 has <code>front = 4</code>, <code>rear = 1</code>, <code>count = 3</code>. Which indices hold the three elements?</summary>
+<div class="details-body">
+<p>The elements occupy indices <code>front</code>, <code>front+1</code>, <code>front+2</code> modulo 6: 4, 5, 0. So indices 4, 5 and 0 hold the queue in FIFO order — index 4 is the oldest (front) and index 0 the newest.</p>
+<p>Check: after three dequeues from index 4, front becomes 1, which equals rear. With <code>count = 0</code> the queue is empty; without the counter you could not distinguish that from full.</p>
+</div>
+</details>
+
+<details>
+<summary><span class="pill supp">exam-hard</span> Explain why an array-based stack doubles rather than growing by a constant, using an amortised argument.</summary>
+<div class="details-body">
+<p><strong>Doubling:</strong> copies occur at sizes 1, 2, 4, …, n. Total copy work is \(\sum 2^k &lt; 2n\). Over \(n\) pushes the total is at most \(3n\), so amortised \(O(1)\) per push.</p>
+<p><strong>Constant growth by k:</strong> a copy of the current size happens every \(k\) pushes. Total work is roughly \(\sum_{i=1}^{n/k} i k \approx n^2/2k\), so amortised \(O(n)\) per push.</p>
+<p>The exponential policy makes the copy cost grow geometrically while the number of copies shrinks geometrically, and the two cancel. Constant growth makes the copy cost grow linearly while the frequency stays fixed, and they do not cancel.</p>
+</div>
+</details>
+
+<h2 id="p3">Chapter 3 — Trees</h2>
+
+<details>
+<summary><span class="pill">applied</span> A binary tree has preorder <code>4 2 1 3 6 5 7</code> and inorder <code>1 2 3 4 5 6 7</code>. Reconstruct the tree.</summary>
+<div class="details-body">
+<p>The first element of preorder is the root: 4. In the inorder sequence, 4 splits the rest into left <code>1 2 3</code> and right <code>5 6 7</code>.</p>
+<p>In preorder the next three elements <code>2 1 3</code> belong to the left subtree; their first is 2, which splits <code>1 2 3</code> into <code>1</code> and <code>3</code>. So 2 has children 1 and 3.</p>
+<p>Similarly <code>6 5 7</code> gives root 6 with children 5 and 7. The tree is: root 4, left 2 (1, 3), right 6 (5, 7).</p>
+</div>
+</details>
+
+<details>
+<summary><span class="pill supp">exam-hard</span> Prove that a full binary tree with L leaves has exactly 2L − 1 nodes.</summary>
+<div class="details-body">
+<p>Let \(n\) be the total nodes, \(i\) the internal nodes and \(L\) the leaves, so \(n = i + L\).</p>
+<p>Count edges from below: every node except the root has exactly one parent, so there are \(n - 1\) edges. Count from above: every internal node has exactly 2 children in a full binary tree, so there are \(2i\) edges. Therefore \(n - 1 = 2i\).</p>
+<p>Substituting \(i = n - L\): \(n - 1 = 2(n - L)\), so \(n - 1 = 2n - 2L\), giving \(n = 2L - 1\). ∎</p>
+</div>
+</details>
+
+<h2 id="p4">Chapter 4 — Binary search trees</h2>
+
+<details>
+<summary><span class="pill">applied</span> Insert 50, 30, 70, 20, 40, 60, 80, then delete 50. Show the tree after each step of the deletion.</summary>
+<div class="details-body">
+<p>Before deletion the tree is balanced: 50 at the root, 30 and 70 as children, 20 and 40 under 30, 60 and 80 under 70.</p>
+<p>50 has two children, so this is case 3. Its inorder successor is the minimum of the right subtree: 60. Copy 60 into the root, then delete 60 from the right subtree — where it is a leaf, so case 1.</p>
+<p>Result: root 60, left 30 (children 20, 40), right 70 (no left child, right child 80). Inorder still reads 20 30 40 60 70 80.</p>
+</div>
+</details>
+
+<details>
+<summary><span class="pill supp">exam-hard</span> What is the average-case height of a BST built from a random permutation of n distinct keys, and why is the worst case different?</summary>
+<div class="details-body">
+<p>Average case: \(\Theta(\log n)\). With random insertion order the tree behaves like a random binary search tree, whose expected height is about \(4.311 \ln n\) — logarithmic.</p>
+<p>Worst case: \(n - 1\), achieved by inserting in sorted order, which produces a chain. Both cases have the same set of keys; only the insertion order differs, so the structure's guarantee is a statement about the input distribution, not about the algorithm.</p>
+<p>This is exactly why AVL trees add an invariant: they convert the average-case guarantee into a worst-case one.</p>
+</div>
+</details>
+
+<h2 id="p5">Chapter 5 — AVL trees</h2>
+
+<details>
+<summary><span class="pill">applied</span> Insert 3, 2, 1, 4, 5, 6, 7 into an empty AVL tree, showing every rotation.</summary>
+<div class="details-body">
+<p>Insert 3, then 2 (left), then 1 (left of 2) → node 3 has bf +2, LL case → right rotation → root 2 with children 1 and 3.</p>
+<p>Insert 4 → right child of 3, balanced. Insert 5 → right of 4; node 3 now has bf −2, RR case → left rotation about 3 → subtree becomes 4 with children 3 and 5.</p>
+<p>Insert 6 → right of 5; node 4 has bf −2 → left rotation about 4 → 5 becomes subtree root.</p>
+<p>Insert 7 → node 5 unbalanced, RR → left rotation → root 4, right 6 with children 5 and 7. Final height 2 for 7 nodes.</p>
+</div>
+</details>
+
+<details>
+<summary><span class="pill supp">exam-hard</span> Prove that an AVL tree of height h has at least n(h) = n(h−1) + n(h−2) + 1 internal nodes, and hence height O(log n).</summary>
+<div class="details-body">
+<p>Take a minimal AVL tree of height \(h\). Its root has two subtrees, one of height \(h-1\) (else the tree would be shorter) and one of height at least \(h-2\) (else the balance factor would exceed 1). Each is itself a minimal AVL tree of its height, so</p>
+<p>\(n(h) = n(h-1) + n(h-2) + 1\), with \(n(1) = 1\) and \(n(2) = 2\).</p>
+<p>This is the Fibonacci recurrence shifted: \(n(h) = F_{h+2} - 1\). Fibonacci numbers grow as \(\phi^h/\sqrt5\) with \(\phi \approx 1.618\), so \(n(h) = \Omega(\phi^h)\). Inverting, \(h = O(\log_\phi n) = O(\log n)\). ∎</p>
+</div>
+</details>
+
+<h2 id="p6">Chapter 6 — Heaps</h2>
+
+<details>
+<summary><span class="pill">applied</span> Is [20, 15, 18, 8, 12, 10, 5] a max-heap? If not, fix it with the minimum number of swaps.</summary>
+<div class="details-body">
+<p>Check each parent: 20 ≥ 15, 18 ✓; 15 ≥ 8, 12 ✓; 18 ≥ 10, 5 ✓. Every parent dominates its children, so it <em>is</em> a valid max-heap, and no swaps are needed.</p>
+<p>Note that the array is not sorted — 15 and 18 are out of order as siblings. A heap only orders each parent against its own children.</p>
+</div>
+</details>
+
+<details>
+<summary><span class="pill supp">exam-hard</span> Show that heapsort is O(n log n) and uses O(1) extra space, and explain why it is not stable.</summary>
+<div class="details-body">
+<p><strong>Time.</strong> build-heap is \(O(n)\). Then \(n-1\) iterations, each a swap plus a sift-down of cost at most \(O(\log n)\). Total \(O(n) + O(n \log n) = O(n \log n)\).</p>
+<p><strong>Space.</strong> Everything happens inside the input array; only a few index variables are needed, so auxiliary space is \(O(1)\).</p>
+<p><strong>Instability.</strong> The swap of the root with the last element moves an element from the far end of the array to the front, past any number of equal keys, with no way to preserve their relative order. Stability requires that equal keys never cross, which a long-distance swap violates.</p>
+</div>
+</details>
+
+<h2 id="p7">Chapter 7 — Graphs</h2>
+
+<details>
+<summary><span class="pill">applied</span> A graph has 7 vertices and 8 edges and is connected. Is it a tree? How many edges must you remove to make it one?</summary>
+<div class="details-body">
+<p>A tree on 7 vertices has exactly 6 edges. With 8 edges the graph is connected and has \(8 - 7 + 1 = 2\) independent cycles, so it is not a tree.</p>
+<p>You must remove 2 edges, one from each cycle, to break both without disconnecting the graph.</p>
+</div>
+</details>
+
+<details>
+<summary><span class="pill supp">exam-hard</span> Prove that a connected graph with V vertices and V − 1 edges is acyclic.</summary>
+<div class="details-body">
+<p>Let the graph be connected. Any connected graph on \(V\) vertices has at least \(V-1\) edges — take a spanning tree, which has exactly \(V-1\).</p>
+<p>Suppose the graph had a cycle. Removing one edge of that cycle keeps it connected, giving a connected graph with \(V-2\) edges, contradicting the minimum of \(V-1\). Hence no cycle exists. ∎</p>
+</div>
+</details>
+
+<h2 id="p8">Chapter 8 — BFS</h2>
+
+<details>
+<summary><span class="pill">applied</span> Run BFS from vertex 1 on edges 1–2, 1–3, 2–4, 2–5, 3–6, 3–7, 5–8. Give distances and the BFS tree.</summary>
+<div class="details-body">
+<p>Distances: \(d(1)=0\); \(d(2)=d(3)=1\); \(d(4)=d(5)=d(6)=d(7)=2\); \(d(8)=3\).</p>
+<p>BFS tree edges: (1,2), (1,3), (2,4), (2,5), (3,6), (3,7), (5,8).</p>
+<p>Visit order: 1, 2, 3, 4, 5, 6, 7, 8. Note that 8 is reached at distance 3 through 5, not through any shorter route.</p>
+</div>
+</details>
+
+<details>
+<summary><span class="pill supp">exam-hard</span> A student claims BFS finds shortest paths in any weighted graph. Refute it.</summary>
+<div class="details-body">
+<p>Counterexample: vertices A, B, C with edges A–B of weight 10, A–C of weight 1, C–B of weight 1.</p>
+<p>BFS from A visits C and B at distance 1 edge each, and reports the path A→B at cost 10 as a shortest path because it has the fewest edges. The genuinely cheapest path is A→C→B at cost 2.</p>
+<p>BFS minimises the number of edges. To minimise total weight you need a priority queue ordered by accumulated cost — that is Dijkstra's algorithm.</p>
+</div>
+</details>
+
+<h2 id="p9">Chapter 9 — DFS</h2>
+
+<details>
+<summary><span class="pill">applied</span> Give a topological order for the DAG with edges 1→2, 1→3, 2→4, 3→4. Is it unique?</summary>
+<div class="details-body">
+<p>In-degrees: 1:0, 2:1, 3:1, 4:2. Start with 1 (the only source). Removing it leaves 2 and 3 both at in-degree 0, so either can come next.</p>
+<p>Both <code>1, 2, 3, 4</code> and <code>1, 3, 2, 4</code> are valid. The order is not unique in general — it is unique only when the DAG has a Hamiltonian path.</p>
+</div>
+</details>
+
+<details>
+<summary><span class="pill supp">exam-hard</span> Why does DFS detect cycles in a directed graph but BFS does not, given that both traverse the same edges?</summary>
+<div class="details-body">
+<p>DFS maintains the <em>recursion stack</em>: the set of vertices on the current path from the root. A back edge — an edge to a vertex that is currently grey, meaning still on that path — closes a cycle directly.</p>
+<p>BFS processes vertices level by level and has no notion of a current path; when it meets an already-visited vertex it cannot tell whether that vertex is an ancestor or a distant cousin. Detecting a directed cycle with BFS requires extra machinery, which is why DFS is the standard tool.</p>
+</div>
+</details>
+
+<h2 id="p10">Chapter 10 — Minimum spanning trees</h2>
+
+<details>
+<summary><span class="pill">applied</span> Run Kruskal on edges A–B 4, A–C 2, B–C 1, B–D 5, C–D 8, C–E 10, D–E 2, D–F 6, E–F 3. Give the MST and its weight.</summary>
+<div class="details-body">
+<p>Sorted: BC 1, AC 2, DE 2, EF 3, AB 4, BD 5, DF 6, CD 8, CE 10.</p>
+<p>Accept BC, AC, DE, EF. Reject AB (cycle A-B-C-A). Accept BD, which joins the two components.</p>
+<p>Five edges for six vertices: {BC, AC, DE, EF, BD}, total \(1+2+2+3+5 = 13\).</p>
+</div>
+</details>
+
+<details>
+<summary><span class="pill supp">exam-hard</span> Prove the cut property: the lightest edge crossing any cut belongs to some MST.</summary>
+<div class="details-body">
+<p>Let \(e\) be the lightest edge crossing cut \((S, V-S)\), and let \(T\) be an MST not containing \(e\). Adding \(e\) to \(T\) creates a unique cycle. That cycle crosses the cut an even number of times, so it contains at least one other crossing edge \(f \ne e\).</p>
+<p>By the choice of \(e\), \(w(e) \le w(f)\). Then \(T' = T - f + e\) is a spanning tree — removing a cycle edge preserves connectivity and acyclicity — and \(w(T') = w(T) - w(f) + w(e) \le w(T)\).</p>
+<p>Since \(T\) was minimum, \(w(T') = w(T)\), so \(T'\) is also an MST and it contains \(e\). ∎</p>
+</div>
+</details>
+
+<!--TOPIC:glossary|Glossary|-->
+<p>Every term used in the course, in one line. Terms are listed roughly in the order you meet them.</p>
+
+<h2 id="a-c">A – C</h2>
+<dl class="glossary">
+<dt>Abstract data type (ADT)</dt><dd>A specification of what operations a structure supports, independent of how they are implemented.</dd>
+<dt>Adjacency list</dt><dd>A graph representation storing, for each vertex, a list of its neighbours. Space \(O(V+E)\).</dd>
+<dt>Adjacency matrix</dt><dd>A \(V \times V\) grid where entry \((i,j)\) records whether an edge exists. Space \(O(V^2)\).</dd>
+<dt>Amortised cost</dt><dd>The average cost per operation over a worst-case sequence of operations, not the cost of one operation.</dd>
+<dt>Ancestor</dt><dd>Any node on the path from the root down to a given node, excluding the node itself.</dd>
+<dt>AVL tree</dt><dd>A BST where every node's two subtree heights differ by at most 1, guaranteeing \(O(\log n)\) height.</dd>
+<dt>Balance factor</dt><dd>For a node, height(left subtree) − height(right subtree). Must be −1, 0 or +1 in an AVL tree.</dd>
+<dt>BFS</dt><dd>Breadth-first search: explore all vertices at distance d before any at distance d+1. Uses a queue.</dd>
+<dt>Back edge</dt><dd>An edge to a vertex currently on the DFS recursion stack; its presence means a cycle exists.</dd>
+<dt>Big-O</dt><dd>An asymptotic upper bound: \(f = O(g)\) if \(f\) grows no faster than a constant multiple of \(g\).</dd>
+<dt>Big-Omega</dt><dd>An asymptotic lower bound: \(f = \Omega(g)\) if \(f\) grows at least as fast as a constant multiple of \(g\).</dd>
+<dt>Big-Theta</dt><dd>A tight bound: both \(O(g)\) and \(\Omega(g)\).</dd>
+<dt>Bipartite</dt><dd>A graph whose vertices can be 2-coloured so every edge joins different colours; equivalently, no odd cycle.</dd>
+<dt>Bridge</dt><dd>An edge whose removal disconnects the graph.</dd>
+<dt>BST</dt><dd>Binary search tree: a binary tree where every left descendant is smaller and every right descendant larger than the node.</dd>
+<dt>Build-heap</dt><dd>Converting an arbitrary array into a heap by sifting down from the last internal node. \(O(n)\).</dd>
+<dt>Circular queue</dt><dd>A queue on an array whose indices wrap modulo the capacity, giving \(O(1)\) at both ends.</dd>
+<dt>Complete binary tree</dt><dd>Every level full except possibly the last, which fills from the left. Required for the array heap layout.</dd>
+<dt>Connected components</dt><dd>The maximal connected subgraphs of a graph; counted by repeated BFS or DFS.</dd>
+<dt>Cut property</dt><dd>For any cut, the lightest edge crossing it belongs to some MST. The basis of Kruskal and Prim.</dd>
+<dt>Cycle</dt><dd>A path that returns to its starting vertex.</dd>
+</dl>
+
+<h2 id="d-h">D – H</h2>
+<dl class="glossary">
+<dt>DAG</dt><dd>Directed acyclic graph — a digraph with no directed cycle. Has a topological order.</dd>
+<dt>Degree</dt><dd>The number of edges incident to a vertex. In a digraph, split into in-degree and out-degree.</dd>
+<dt>Deque</dt><dd>Double-ended queue: insert and delete at both ends in \(O(1)\).</dd>
+<dt>Depth</dt><dd>Number of edges from the root to a node.</dd>
+<dt>DFS</dt><dd>Depth-first search: follow one path until it dead-ends, then backtrack. Uses a stack.</dd>
+<dt>Diameter</dt><dd>The length of the longest shortest path in a graph.</dd>
+<dt>Dijkstra's algorithm</dt><dd>Single-source shortest paths on non-negative weights using a priority queue. Not in this syllabus, but the standard contrast with BFS.</dd>
+<dt>Edge</dt><dd>A connection between two vertices.</dd>
+<dt>Finish time</dt><dd>In DFS, the timestamp when a vertex is fully processed and coloured black.</dd>
+<dt>Full binary tree</dt><dd>Every internal node has exactly two children. With L leaves it has 2L − 1 nodes.</dd>
+<dt>Graph</dt><dd>A set of vertices and a set of edges joining them.</dd>
+<dt>Heap</dt><dd>A complete binary tree stored in an array where every parent dominates its children. Max-heap or min-heap.</dd>
+<dt>Heapify (sift down)</dt><dd>Restore the heap property by repeatedly swapping a node with its larger child.</dd>
+<dt>Height</dt><dd>In this course, the number of edges on the longest path from a node down to a leaf. A leaf has height 0.</dd>
+</dl>
+
+<h2 id="i-m">I – M</h2>
+<dl class="glossary">
+<dt>Inorder traversal</dt><dd>Left subtree, node, right subtree. On a BST it yields the keys in sorted order.</dd>
+<dt>Internal node</dt><dd>A node with at least one child.</dd>
+<dt>Kruskal's algorithm</dt><dd>MST by sorting edges and adding the cheapest that does not create a cycle. Uses union-find.</dd>
+<dt>Leaf (external node)</dt><dd>A node with no children.</dd>
+<dt>Level order</dt><dd>Traversal by depth, left to right, using a queue.</dd>
+<dt>Linear search</dt><dd>Scan every element. \(O(n)\) worst case.</dd>
+<dt>Linked list</dt><dd>A sequence of nodes each holding a value and a pointer to the next.</dd>
+<dt>LIFO</dt><dd>Last in, first out — the stack discipline.</dd>
+<dt>FIFO</dt><dd>First in, first out — the queue discipline.</dd>
+<dt>Min-heap</dt><dd>A heap where every parent is smaller than its children; the minimum is at the root. Python's <code>heapq</code> is a min-heap.</dd>
+<dt>MST</dt><dd>Minimum spanning tree: the spanning tree of least total edge weight.</dd>
+<dt>Multigraph</dt><dd>A graph permitting parallel edges or self-loops.</dd>
+</dl>
+
+<h2 id="n-r">N – R</h2>
+<dl class="glossary">
+<dt>Parent</dt><dd>The node directly above a given node in a tree.</dd>
+<dt>Path</dt><dd>A sequence of edges connecting vertices. A simple path repeats no vertex.</dd>
+<dt>Path cost</dt><dd>The sum of the weights of the edges on a path.</dd>
+<dt>Postorder traversal</dt><dd>Left subtree, right subtree, node. Used to free a tree or evaluate postfix expressions.</dd>
+<dt>Preorder traversal</dt><dd>Node, left subtree, right subtree. Used to copy a tree or produce a prefix expression.</dd>
+<dt>Prim's algorithm</dt><dd>MST by growing a tree from one vertex, always adding the cheapest edge leaving it. Uses a priority queue.</dd>
+<dt>Priority queue</dt><dd>An ADT where each element has a priority and the highest-priority element is removed first. Implemented as a heap.</dd>
+<dt>Queue</dt><dd>A FIFO container: enqueue at the rear, dequeue from the front.</dd>
+<dt>Recurrence</dt><dd>An equation expressing the cost of a problem in terms of the cost of smaller instances, e.g. \(T(n) = 2T(n/2) + n\).</dd>
+<dt>Root</dt><dd>The unique node of a tree with no parent.</dd>
+</dl>
+
+<h2 id="s-z">S – Z</h2>
+<dl class="glossary">
+<dt>Search table</dt><dd>An ordered map implemented as a sorted array, giving \(O(\log n)\) binary search but \(O(n)\) insertion.</dd>
+<dt>Sift up</dt><dd>Restore the heap property after an insertion by swapping upward while larger than the parent.</dd>
+<dt>Spanning tree</dt><dd>A tree on all the vertices of a graph, using only the graph's edges. Has exactly \(V-1\) edges.</dd>
+<dt>Stack</dt><dd>A LIFO container: push and pop at the top.</dd>
+<dt>Strongly connected</dt><dd>In a digraph, a path exists in both directions between every pair of vertices.</dd>
+<dt>Subtree</dt><dd>A node together with all its descendants.</dd>
+<dt>Successor (inorder)</dt><dd>The next key in sorted order. The minimum of the right subtree, or the lowest ancestor reached from the left.</dd>
+<dt>Topological order</dt><dd>A linear ordering of a DAG's vertices where every edge points forward. Exists iff the graph is acyclic.</dd>
+<dt>Tree</dt><dd>A connected acyclic graph; equivalently, a root node with disjoint subtrees.</dd>
+<dt>Union-find</dt><dd>A disjoint-set structure supporting near-\(O(1)\) union and find, used to detect cycles in Kruskal.</dd>
+<dt>Vertex</dt><dd>A node of a graph.</dd>
+<dt>Weighted graph</dt><dd>A graph in which each edge carries a numeric cost.</dd>
+</dl>
