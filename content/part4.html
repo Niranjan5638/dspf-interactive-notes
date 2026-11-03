@@ -67,6 +67,57 @@
 <tr><td>Level order</td><td>by depth, left to right (uses a queue)</td><td>Breadth-first over a tree</td></tr>
 </tbody></table></div>
 
+<h3>The traversals in pseudocode</h3>
+<p>The three depth-first orders differ only in where the <code>visit</code> line sits. Writing them this way makes the symmetry obvious, and it is what the exam expects if you are asked to "give the algorithm" rather than the output.</p>
+
+<div class="codeblock">
+  <div class="codeblock-header"><span class="lang">Pseudocode</span><span class="file">DEPTH-FIRST TRAVERSALS</span></div>
+<pre><code class="language-c">PREORDER(x):
+    if x == nil: return
+    visit(x)                 # node first
+    PREORDER(x.left)
+    PREORDER(x.right)
+
+INORDER(x):
+    if x == nil: return
+    INORDER(x.left)
+    visit(x)                 # node in the middle
+    INORDER(x.right)
+
+POSTORDER(x):
+    if x == nil: return
+    POSTORDER(x.left)
+    POSTORDER(x.right)
+    visit(x)                 # node last</code></pre>
+</div>
+
+<div class="codeblock">
+  <div class="codeblock-header"><span class="lang">Pseudocode</span><span class="file">LEVEL ORDER</span></div>
+<pre><code class="language-c">LEVEL-ORDER(root):
+    if root == nil: return
+    Q = empty queue
+    ENQUEUE(Q, root)
+    while Q not empty:
+        x = DEQUEUE(Q)
+        visit(x)
+        if x.left  != nil: ENQUEUE(Q, x.left)     # left before right
+        if x.right != nil: ENQUEUE(Q, x.right)</code></pre>
+</div>
+
+<div class="box note" style="background:var(--amber-soft);border:1px solid rgba(161,98,7,.24);border-radius:6px;padding:12px 16px;margin:14px 0">
+<span class="box-label" style="font-family:var(--font-mono);font-size:9px;letter-spacing:1.8px;text-transform:uppercase;color:var(--amber);font-weight:700;margin-bottom:5px;display:block">Iterative form</span>
+<p>Any depth-first traversal can be rewritten with an explicit stack, which removes the recursion-depth limit. For preorder the stack holds nodes to visit; for inorder the standard form walks left pushing onto the stack, then pops and moves right:</p>
+<pre style="font-family:var(--font-mono);font-size:12.5px;background:var(--paper-2);border:1px solid var(--rule-2);border-radius:6px;padding:12px 14px;overflow-x:auto;margin:10px 0 0;line-height:1.7">INORDER-ITERATIVE(root):
+    stack = empty
+    x = root
+    while stack not empty or x != nil:
+        while x != nil:
+            PUSH(stack, x); x = x.left
+        x = POP(stack)
+        visit(x)
+        x = x.right</pre>
+</div>
+
 <div class="box example">
 <span class="box-label">Worked example — all four orders on one tree</span>
 <p>Root 4, with left child 2 (children 1 and 3) and right child 6 (children 5 and 7).</p>
