@@ -20,6 +20,10 @@ TOPICS = [
     ("10-mst",         "10", "Minimum Spanning Trees", "Kruskal, Prim and the cut property that makes both of them correct.", "MST, minimum spanning tree, Kruskal, Prim, union-find, cut property, greedy"),
 ]
 
+SUPP = [
+    ("11-shortest-paths", "11", "Shortest Paths", "Dijkstra, Bellman-Ford and Floyd-Warshall — outside the examinable syllabus.", "Dijkstra, Bellman-Ford, Floyd-Warshall, shortest path, relaxation, negative cycle"),
+]
+
 EXTRA_PAGES = [
     ("visualizers", "Interactive Visualizers", "Drive the algorithms yourself: stack, queue, BST, heap, BFS/DFS and growth rates."),
     ("practice",    "Practice and Examination Questions", "Graded questions with full worked solutions, from recall to exam-hard."),
@@ -99,6 +103,10 @@ def sidebar(rel, current):
     for slug, num, title, _short, _kw in TOPICS:
         cls = ' class="active"' if slug == current else ''
         out.append(f'<a href="{rel}topics/{slug}.html" data-topic-id="topic-{slug}"{cls}>{num} · {html.escape(title)}</a>')
+    out.append('<div class="side-group">Supplementary</div>')
+    for slug, num, title, _short, _kw in SUPP:
+        cls = ' class="active"' if slug == current else ''
+        out.append(f'<a href="{rel}topics/{slug}.html"{cls}>{num} · {html.escape(title)}</a>')
     out.append('<div class="side-group">Tools</div>')
     for slug, title, _d in EXTRA_PAGES:
         cls = ' class="active"' if slug == current else ''
@@ -110,8 +118,12 @@ def sidebar(rel, current):
 def pager(rel, idx):
     if idx is None:
         return ''
-    prev_t = TOPICS[idx - 1] if idx > 0 else None
-    next_t = TOPICS[idx + 1] if idx < len(TOPICS) - 1 else None
+    if idx == 'supp':
+        prev_t = TOPICS[-1]
+        next_t = None
+    else:
+        prev_t = TOPICS[idx - 1] if idx > 0 else None
+        next_t = TOPICS[idx + 1] if idx < len(TOPICS) - 1 else SUPP[0]
     out = ['<nav class="pager" aria-label="Chapter navigation">']
     if prev_t:
         out.append(f'<a href="{rel}topics/{prev_t[0]}.html"><span class="dir">← Previous</span><span class="ttl">{prev_t[1]} · {html.escape(prev_t[2])}</span></a>')
@@ -146,11 +158,13 @@ def build():
     # search index
     for slug, num, title, short, kw in TOPICS:
         SEARCH.append({"title": f"{num} · {title}", "topic": "Chapter", "url": f"topics/{slug}.html", "keywords": kw + " " + short})
+    for slug, num, title, short, kw in SUPP:
+        SEARCH.append({"title": f"{num} · {title}", "topic": "Supplementary", "url": f"topics/{slug}.html", "keywords": kw + " " + short})
     for slug, title, desc in EXTRA_PAGES:
         SEARCH.append({"title": title, "topic": "Tool", "url": f"{slug}.html", "keywords": desc})
 
     # section-level entries from fragments
-    for slug, num, title, _s, _k in TOPICS:
+    for slug, num, title, _s, _k in TOPICS + SUPP:
         body = frags.get(slug, '')
         for m in re.finditer(r'<h2[^>]*id="([^"]+)"[^>]*>(.*?)</h2>', body, re.S):
             anchor, text = m.group(1), re.sub(r'<[^>]+>', '', m.group(2)).strip()
@@ -170,6 +184,22 @@ def build():
         doc = head(f"{num} · {title}", "../", f"topic-{slug}", short)
         doc += '<div class="shell">\n' + sidebar("../", slug) + '\n<main>\n'
         doc += f'<div class="kicker">Chapter {num}</div>\n<h1>{html.escape(title)}</h1>\n'
+        doc += f'<p class="lede">{html.escape(short)}</p>\n'
+        doc += body + '\n'
+        doc += tail("../", search_json)
+        path = os.path.join(TOPICS_DIR, f"{slug}.html")
+        open(path, 'w', encoding='utf-8').write(doc)
+        written.append(path)
+
+    for slug, num, title, short, _kw in SUPP:
+        body = frags.get(slug)
+        if body is None:
+            print(f"  !! missing fragment for {slug}")
+            continue
+        TAIL_IDX = 'supp'
+        doc = head(f"{num} · {title}", "../", f"topic-{slug}", short)
+        doc += '<div class="shell">\n' + sidebar("../", slug) + '\n<main>\n'
+        doc += f'<div class="kicker">Supplementary chapter</div>\n<h1>{html.escape(title)}</h1>\n'
         doc += f'<p class="lede">{html.escape(short)}</p>\n'
         doc += body + '\n'
         doc += tail("../", search_json)
