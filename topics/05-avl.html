@@ -135,6 +135,66 @@ n(h) = n(h-1) + n(h-2) + 1, \qquad n(1) = 1,\; n(2) = 2
 <p>In every case, the <strong>middle value of the three becomes the new subtree root</strong>, and the other two become its children in key order. LL has values 10, 20, 30 → 20 on top. RL has 10, 20, 30 → 20 on top. The rotations are just the mechanism for performing that rearrangement while preserving the BST property.</p>
 </div>
 
+<h3>Rotations and rebalancing in pseudocode</h3>
+<p>Everything in this chapter reduces to three procedures. The rotations do the pointer surgery; <code>REBALANCE</code> decides which rotation the shape calls for; the insert simply walks back up applying it.</p>
+
+<div class="codeblock">
+  <div class="codeblock-header"><span class="lang">Pseudocode</span><span class="file">ROTATIONS</span></div>
+<pre><code class="language-c">HEIGHT(n):   return (n == nil) ? -1 : n.height      # leaf has height 0
+BALANCE(n):  return HEIGHT(n.left) - HEIGHT(n.right)
+UPDATE(n):   n.height = 1 + max(HEIGHT(n.left), HEIGHT(n.right))
+
+ROTATE-RIGHT(z):                  #       z            y
+    y = z.left                    #      / \          / \
+    z.left = y.right              #     y   c   --&gt;  a   z
+    y.right = z                   #    / \              / \
+    UPDATE(z)                     #   a   b            b   c
+    UPDATE(y)
+    return y                      # y is the new subtree root
+
+ROTATE-LEFT(z):                   # mirror image of the above
+    y = z.right
+    z.right = y.left
+    y.left = z
+    UPDATE(z)
+    UPDATE(y)
+    return y</code></pre>
+</div>
+
+<div class="codeblock">
+  <div class="codeblock-header"><span class="lang">Pseudocode</span><span class="file">REBALANCE AND INSERT</span></div>
+<pre><code class="language-c">REBALANCE(z):                     # O(1)
+    UPDATE(z)
+    if BALANCE(z) &gt; 1:                    # left-heavy
+        if BALANCE(z.left) &lt; 0:           # LR shape
+            z.left = ROTATE-LEFT(z.left)  #   make it LL
+        return ROTATE-RIGHT(z)            # LL: single right rotation
+    if BALANCE(z) &lt; -1:                   # right-heavy
+        if BALANCE(z.right) &gt; 0:          # RL shape
+            z.right = ROTATE-RIGHT(z.right)   # make it RR
+        return ROTATE-LEFT(z)                 # RR: single left rotation
+    return z                              # already balanced
+
+AVL-INSERT(T, k):                 # O(log n)
+    z = BST-INSERT(T, k)          # ordinary BST insert, leaf level
+    node = z.parent
+    while node != nil:            # walk up to the root
+        parent = node.parent
+        fixed  = REBALANCE(node)  # may rotate; returns new subtree root
+        if fixed != node:         # reattach the new subtree root
+            if parent == nil:        T.root = fixed
+            else if parent.left == node:  parent.left  = fixed
+            else:                         parent.right = fixed
+            fixed.parent = parent
+        node = parent
+    return T</code></pre>
+</div>
+
+<div class="box warn">
+<span class="box-label">Reading the loop correctly</span>
+<p>The walk up the tree is what distinguishes insertion from deletion. For an <strong>insertion</strong> the loop can stop after the first rotation, because that rotation restores the subtree to its original height — nothing above it can have become unbalanced. For a <strong>deletion</strong> the same loop must continue to the root, because the rotation may have shortened the subtree, propagating the imbalance upward. The pseudocode above runs to the root for safety; adding an early exit after the first rotation is the usual optimisation, and it is valid only for insertion.</p>
+</div>
+
 <h2 id="insertdelete">Insertion versus deletion</h2>
 
 <div class="tablewrap"><table>
