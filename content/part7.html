@@ -8,6 +8,30 @@
 <p>A server runs jobs, each with an expected run time. The policy is shortest remaining processing time. You need: find the next job to run, delete a job when it finishes, and insert a job when it arrives. A sorted array gives \(O(1)\) find and \(O(n)\) insert; an unsorted array gives \(O(n)\) find and \(O(1)\) insert. A heap gives \(O(1)\) find and \(O(\log n)\) for both — the best of both, which is exactly the trade a heap is designed for.</p>
 </div>
 
+<h2 id="implementations">Priority queue implementations compared</h2>
+
+<p>The lecture sets out four ways to build a priority queue before settling on the heap. It is worth seeing the table, because the choice is a genuine trade and an exam question often asks you to justify it rather than just state it.</p>
+
+<div class="tablewrap"><table>
+<thead><tr><th>Implementation</th><th>find-max</th><th>insert</th><th>delete-max</th><th>When it wins</th></tr></thead>
+<tbody>
+<tr><td>Unsorted array</td><td>\(O(n)\)</td><td>\(O(1)\)</td><td>\(O(n)\)</td><td>Almost never — insert is cheap but every removal scans</td></tr>
+<tr><td>Sorted array</td><td>\(O(1)\)</td><td>\(O(n)\)</td><td>\(O(1)\)</td><td>Read-heavy workloads: many peeks, few insertions</td></tr>
+<tr><td>Unsorted linked list</td><td>\(O(n)\)</td><td>\(O(1)\)</td><td>\(O(n)\)</td><td>No capacity limit, but no advantage over the unsorted array</td></tr>
+<tr><td>Sorted linked list</td><td>\(O(1)\)</td><td>\(O(n)\)</td><td>\(O(1)\)</td><td>Insertion in the middle is \(O(1)\) once located, but locating is \(O(n)\)</td></tr>
+<tr><td>Balanced BST (AVL)</td><td>\(O(\log n)\)</td><td>\(O(\log n)\)</td><td>\(O(\log n)\)</td><td>When you also need ordered traversal or successor queries</td></tr>
+<tr><td><strong>Binary heap</strong></td><td><strong>\(O(1)\)</strong></td><td><strong>\(O(\log n)\)</strong></td><td><strong>\(O(\log n)\)</strong></td><td><strong>The best all-round balance, with no pointers and no rotations</strong></td></tr>
+</tbody></table></div>
+
+<div class="box why">
+<span class="box-label">Why the heap beats the AVL tree for this job</span>
+<p>An AVL tree also gives \(O(\log n)\) for everything, so on paper it looks equal or better — it offers ordered traversal, which the heap does not. The heap wins on constants and simplicity: it needs no pointers, no balance factors, no rotations, and it is one contiguous array, so it is cache-friendly and allocates nothing per element. If you genuinely need the elements in sorted order, use a BST; if you only ever need the maximum, the heap does the same job in a fraction of the machinery.</p>
+</div>
+
+<h3>The heap as a partial sort</h3>
+<p>A sorted array is fully ordered: every element is in its final position. A heap is <strong>partially</strong> ordered: each parent dominates its children and nothing else is guaranteed. That is a deliberate weakening — it is exactly the amount of order needed to know the maximum in \(O(1)\), and it costs far less to maintain than full order.</p>
+<p>The practical consequence is that you cannot iterate a heap in sorted order, and an inorder traversal of a heap is meaningless. What you <em>can</em> do is extract the maximum repeatedly, which is heapsort.</p>
+
 <h2 id="property">The heap property and the array layout</h2>
 
 <div class="box def">
@@ -268,6 +292,54 @@ if __name__ == "__main__":
 <span class="box-label">Python's heapq is a min-heap</span>
 <p><code>heapq</code> gives the smallest element first. For a max-heap, either negate the values on the way in and out, or store tuples <code>(-priority, item)</code>. This is a favourite exam question.</p>
 </div>
+
+<h3>A full heapsort trace</h3>
+
+<div class="box example">
+<span class="box-label">Heapsort on [4, 10, 3, 5, 1]</span>
+<p>After build-heap the array is <code>[10, 5, 3, 4, 1]</code>. The bar marks the boundary: everything to its right is sorted and no longer part of the heap.</p>
+<div class="tablewrap"><table>
+<thead><tr><th>Step</th><th>Action</th><th>Array</th></tr></thead>
+<tbody>
+<tr><td>start</td><td>build-heap complete</td><td>[10, 5, 3, 4, 1]</td></tr>
+<tr><td>1</td><td>swap root with last, sift down over n=4</td><td>[5, 4, 3, 1 | <strong>10</strong>]</td></tr>
+<tr><td>2</td><td>swap, sift down over n=3</td><td>[4, 1, 3 | <strong>5, 10</strong>]</td></tr>
+<tr><td>3</td><td>swap, sift down over n=2</td><td>[3, 1 | <strong>4, 5, 10</strong>]</td></tr>
+<tr><td>4</td><td>swap, heap of size 1 needs no sift</td><td>[1 | <strong>3, 4, 5, 10</strong>]</td></tr>
+</tbody></table></div>
+<p>Step 1 in detail: swap 10 and 1 giving <code>[1, 5, 3, 4, 10]</code>. Sift down 1 against children 5 and 3 — swap with 5, giving <code>[5, 1, 3, 4, 10]</code> — then 1 has child 4, swap, giving <code>[5, 4, 3, 1, 10]</code>. Now 1 is a leaf and the heap property holds over the first four slots.</p>
+<p>Result: <code>[1, 3, 4, 5, 10]</code>.</p>
+</div>
+
+<h3>Why heapsort is correct</h3>
+
+<p>The argument is an invariant on the boundary. At the start of each iteration:</p>
+<ol>
+<li><code>a[0 .. end]</code> is a valid max-heap, and</li>
+<li><code>a[end+1 .. n-1]</code> holds the largest <code>n-1-end</code> elements, in sorted order.</li>
+</ol>
+<p><strong>Base case.</strong> Immediately after build-heap, condition 1 holds for <code>end = n-1</code> and the sorted suffix is empty, so condition 2 is vacuous.</p>
+<p><strong>Inductive step.</strong> By condition 1, <code>a[0]</code> is the maximum of the heap, hence the maximum of <code>a[0 .. end]</code>. Every element in the suffix is already larger than everything in the heap, so <code>a[0]</code> belongs immediately before the suffix. The swap puts it there. Sifting down then restores condition 1 over the shortened range <code>a[0 .. end-1]</code>.</p>
+<p><strong>Termination.</strong> The loop ends at <code>end = 0</code>, at which point the suffix is the entire array in sorted order. ∎</p>
+
+<div class="box why">
+<span class="box-label">The two properties heapsort does not have</span>
+<p><strong>It is not stable.</strong> The swap moves an element from the far end of the array to the root, past any number of equal keys, with no way to preserve their relative order.</p>
+<p><strong>It is not adaptive.</strong> Unlike insertion sort, heapsort takes \(O(n\log n)\) even on already-sorted input — build-heap does its full work regardless, and the extraction loop always runs.</p>
+</div>
+
+<h3>Complexity summary</h3>
+
+<div class="tablewrap"><table>
+<thead><tr><th>Phase</th><th>Cost</th><th>Why</th></tr></thead>
+<tbody>
+<tr><td>build-heap</td><td>\(O(n)\)</td><td>Sum of \(k \cdot n/2^{k+1}\) over all heights \(k\) converges to \(2n\)</td></tr>
+<tr><td>extraction loop</td><td>\(O(n \log n)\)</td><td>\(n-1\) iterations, each sift-down of cost at most \(\log n\)</td></tr>
+<tr><td><strong>Total time</strong></td><td><strong>\(O(n \log n)\)</strong></td><td>Best, average and worst case are all the same</td></tr>
+<tr><td>Auxiliary space</td><td>\(O(1)\)</td><td>Everything happens inside the input array</td></tr>
+<tr><td>Stable</td><td>No</td><td>Long-distance swaps reorder equal keys</td></tr>
+<tr><td>Adaptive</td><td>No</td><td>Sorted input is no cheaper than random input</td></tr>
+</tbody></table></div>
 
 <h2 id="mistakes">Common mistakes</h2>
 
